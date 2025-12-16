@@ -47,7 +47,10 @@ export class Connect4 {
         return this.currentPlayer;
     };
 
-    private dropPiece(column: ColumnIndex): boolean {
+    public dropPiece(column: ColumnIndex): boolean {
+        // We might need this to prevent a bug, we'll see when we try the game.
+        // if (this.gameOver) return false;
+
         // check if column is either full or if input is valid
         if (column < 0 || column > 6) {
             return false;
@@ -60,14 +63,14 @@ export class Connect4 {
             if (this.board[r][column] === 0) {
                 this.board[r][column] = this.currentPlayer;
                 const row = r as RowIndex;
-                
 
                 if (this.checkHasWin(row, column)) {
                     this.winner = this.currentPlayer;
                     this.gameOver = true;
+                } else {
+                    this.switchPlayerTurn();
                 }
                 
-                this.switchPlayerTurn();
                 return true;
             }
 
@@ -75,32 +78,22 @@ export class Connect4 {
         }
         return false;
     };
-    
+
     private checkHasWin(row: RowIndex, column: ColumnIndex) {
-    //      get position of last placed piece
-        const lastPiece: Cell = this.board[row][column];
+        //      get position of last placed piece
+        //     const lastPiece: Cell = this.board[row][column];
         const player: Player = this.currentPlayer;
         let count: number = 1;
 
-// Red = 1, Yellow = 2, empty = 0
-//        Col 0  Col 1  Col 2  Col 3  Col 4  Col 5  Col 6
-//         ↓      ↓      ↓      ↓      ↓      ↓      ↓
-// Row 0 [ 0,     0,     0,     0,     0,     0,     0 ]  <-- TOP
-// Row 1 [ 0,     0,     0,     0,     0,     0,     0 ]
-// Row 2 [ 0,     0,     0,     0,     0,     0,     0 ]
-// Row 3 [ 0,     0,     0,     0,     0,     0,     0 ]
-// Row 4 [ 0,     1,     1,     X,     1,     0,     0 ]
-// Row 5 [ 2,     2,     1,     2,     1,     0,     0 ]  <-- BOTTOM
-
-    //      check horizontal - possibilities
-    //      Left ←
+        //      check horizontal - possibilities
+        //      Left ←
         for (let i = 1; i < 4; i++) {
             if (column - i < 0 || this.board[row][column - i] !== player) {
                 break;
             }
             count++;
         }
-    //      Right →
+        //      Right →
         for (let i = 1; i < 4; i++) {
             if (column + i >= this.cols || this.board[row][column + i] !== player) {
                 break;
@@ -171,11 +164,11 @@ export class Connect4 {
             return true;
         }
 
-        
+
         return false;
     };
 
-    printBoard() {
+    public printBoard() {
         console.table(this.board);
     };
 }

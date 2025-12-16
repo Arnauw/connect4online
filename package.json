@@ -1,0 +1,18 @@
+{
+  "name": "connect4online",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "both": "concurrently \"pnpm --filter frontend dev\" \"cd backend && symfony server:start\"",
+    "front": "cd frontend && pnpm dev",
+    "back": "cd backend && symfony server:start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.24.0",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
