@@ -1,7 +1,7 @@
 export type Player = 1 | 2;
 export type Cell = Player | 0;
 export type ColumnIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-export type RowIndex = 0 | 1 | 2 | 3 | 4 | 5 ;
+export type RowIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
 // Red = 1, Yellow = 2, empty = 0
 //
@@ -22,12 +22,14 @@ export class Connect4 {
     currentPlayer: Player;
     winner: Player | null;
     gameOver: boolean;
+    movesPlayed: number;
 
     constructor() {
         this.board = this.createGrid();
         this.currentPlayer = 1;
         this.winner = null;
         this.gameOver = false;
+        this.movesPlayed = 0;
     };
 
     private createGrid(): Cell[][] {
@@ -50,7 +52,8 @@ export class Connect4 {
     public dropPiece(column: ColumnIndex): boolean {
         // We might need this to prevent a bug, we'll see when we try the game.
         // if (this.gameOver) return false;
-
+        
+        const totalBoardCells: number = this.rows * this.cols;
         // check if column is either full or if input is valid
         if (column < 0 || column > 6) {
             return false;
@@ -62,15 +65,18 @@ export class Connect4 {
 
             if (this.board[r][column] === 0) {
                 this.board[r][column] = this.currentPlayer;
+                this.movesPlayed++;
                 const row = r as RowIndex;
 
                 if (this.checkHasWin(row, column)) {
                     this.winner = this.currentPlayer;
                     this.gameOver = true;
+                } else if (this.movesPlayed >= totalBoardCells) {
+                    this.gameOver = true;
                 } else {
                     this.switchPlayerTurn();
                 }
-                
+
                 return true;
             }
 
