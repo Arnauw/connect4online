@@ -15,6 +15,7 @@ export type RowIndex = 0 | 1 | 2 | 3 | 4 | 5;
 // Row 5 [ 2,     2,     1,     2,     1,     0,     0 ]  <-- BOTTOM
 
 
+
 export class Connect4 {
     rows = 6;
     cols = 7;
