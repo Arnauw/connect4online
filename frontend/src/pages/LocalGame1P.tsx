@@ -1,5 +1,5 @@
+import { GameBoard } from "../components/game/GameBoard";
+
 export const LocalGame1P = () => {
-    return (
-        <></>
-    );
+    return <GameBoard title="Player vs Bot" />;
 };
