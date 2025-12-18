@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {type Cell, type ColumnIndex, Connect4, type Player} from "../logic/Connect4";
+import {type Cell, type ColumnIndex, Connect4, type Player} from "../../logic/Connect4.ts";
 
 const getCellClass = (cell: Cell): string => {
     switch (cell) {
