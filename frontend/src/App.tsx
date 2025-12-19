@@ -5,7 +5,6 @@ import {LocalGame1P} from "./pages/LocalGame1P.tsx";
 import {LocalGame2P} from "./pages/LocalGame2P.tsx";
 import {OnlineGame} from "./pages/OnlineGame.tsx";
 import {PageLayout} from "./components/layout/PageLayout.tsx";
-// import {GameBoard} from "./components/game/GameBoard.tsx";
 
 const LayoutWrapper = () => {
     return (
@@ -27,9 +26,8 @@ function App() {
                     <Route path="/online" element={<OnlineGame/>}/>
                 </Route>
             </Routes>
-            {/*<GameBoard/>*/}
         </HashRouter>
-    )
-}
+    );
+};
 
 export default App
