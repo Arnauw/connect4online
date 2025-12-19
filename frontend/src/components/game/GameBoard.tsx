@@ -27,8 +27,8 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     const [winner, setWinner] = useState<Player | null>(game.winner);
     const [isGameOver, setIsGameOver] = useState<boolean>(game.gameOver);
     const workerRef = useRef<Worker | null>(null);
-
-
+    
+    // We must import Worker that way because it needs to use a different Thread
     useEffect(() => {
         workerRef.current = new Worker(
             new URL('../../workers/bot.worker.ts', import.meta.url),
@@ -60,7 +60,6 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
 
     useEffect(() => {
         if (currentPlayer === 2 && vsBot && !winner && !isGameOver) {
-
             if (!workerRef.current) return;
             
             workerRef.current.onmessage = (e) => {
@@ -73,7 +72,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
                 player: 2
             });
         }
-    }, [currentPlayer, vsBot, winner, isGameOver, game]);
+    }, [currentPlayer]);
 
     return (
         <div className="min-h-screen w-full flex flex-col items-center relative">

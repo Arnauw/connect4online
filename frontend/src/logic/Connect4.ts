@@ -68,6 +68,7 @@ export class Connect4 {
                 this.board[r][column] = this.currentPlayer;
                 this.movesPlayed++;
                 const row = r as RowIndex;
+                console.log(`This cell = board[${r}][${column}]`, this.board[r][column]);
 
                 if (this.checkHasWin(row, column)) {
                     this.winner = this.currentPlayer;
@@ -80,8 +81,6 @@ export class Connect4 {
 
                 return true;
             }
-
-            console.log(`This cell = board[${r}][${column}]`, this.board[r][column]);
         }
         return false;
     };

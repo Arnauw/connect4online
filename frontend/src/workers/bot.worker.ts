@@ -1,3 +1,6 @@
+// A Web Worker permits the use of Multithreading in the browser.
+// We need multithreading to avoid the page freezing when the bot will calculate like 1000 moves.
+
 import type { Cell, ColumnIndex } from "../logic/Connect4";
 
 type BotRequest = {
@@ -5,6 +8,9 @@ type BotRequest = {
     player: 1 | 2;
     difficulty: number;
 };
+
+const colindex: ColumnIndex = 0; // remove this it's just to remove eslint errors.
+console.log(colindex); // remove this it's just to remove eslint errors.
 
 self.onmessage = (e: MessageEvent<BotRequest>) => {
     const { board, player } = e.data;
@@ -16,7 +22,7 @@ self.onmessage = (e: MessageEvent<BotRequest>) => {
 };
 
 function computeBestMove(board: Cell[][], player: 1 | 2): number {
-
+    console.log(player); // remove this it's just to remove eslint errors.
     const validColumns: number[] = [];
 
     for (let c = 0; c < 7; c++) {
