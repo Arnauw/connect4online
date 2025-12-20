@@ -9,12 +9,12 @@
         }
     },
     "doctrine/doctrine-bundle": {
-        "version": "3.1",
+        "version": "2.18",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "3.0",
-            "ref": "18ee08e513ba0303fd09a01fc1c934870af06ffa"
+            "version": "2.13",
+            "ref": "620b57f496f2e599a6015a9fa222c2ee0a32adcb"
         },
         "files": [
             "config/packages/doctrine.yaml",
@@ -23,7 +23,7 @@
         ]
     },
     "doctrine/doctrine-migrations-bundle": {
-        "version": "4.0",
+        "version": "3.7",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -51,7 +51,7 @@
         ]
     },
     "symfony/asset-mapper": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -66,7 +66,7 @@
         ]
     },
     "symfony/console": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -78,7 +78,7 @@
         ]
     },
     "symfony/debug-bundle": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -103,7 +103,7 @@
         ]
     },
     "symfony/form": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -115,7 +115,7 @@
         ]
     },
     "symfony/framework-bundle": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -135,7 +135,7 @@
         ]
     },
     "symfony/mailer": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -156,7 +156,7 @@
         }
     },
     "symfony/messenger": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -180,7 +180,7 @@
         ]
     },
     "symfony/notifier": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -192,7 +192,7 @@
         ]
     },
     "symfony/property-info": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -204,7 +204,7 @@
         ]
     },
     "symfony/routing": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -217,7 +217,7 @@
         ]
     },
     "symfony/security-bundle": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -245,7 +245,7 @@
         ]
     },
     "symfony/translation": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -258,7 +258,7 @@
         ]
     },
     "symfony/twig-bundle": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -283,7 +283,7 @@
         ]
     },
     "symfony/validator": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -295,7 +295,7 @@
         ]
     },
     "symfony/web-profiler-bundle": {
-        "version": "8.0",
+        "version": "7.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
