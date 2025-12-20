@@ -39,6 +39,7 @@ phpunit.xml
 .env.local
 .env.local.php
 .env.*.local
+.env.test
 config/secrets/prod/prod.decrypt.private.php
 
 ### Documentation Rules ###
@@ -47,3 +48,6 @@ config/secrets/prod/prod.decrypt.private.php
 # ...but keep the README.md in any folder
 !README.md
 !**/README.md
+
+### JWT KEYS ###
+*.pem

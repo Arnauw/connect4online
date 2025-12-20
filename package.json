@@ -4,9 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "both": "concurrently \"pnpm --filter frontend dev\" \"cd backend && symfony server:start\"",
+    "all": "pnpm docker && pnpm both",
+    "docker": "cd backend && docker compose --env-file .env.local up -d",
+    "dockerS": "cd backend && docker compose down",
+    "dockerDel": "cd backend && docker compose down -v",
+    "both": "concurrently \"pnpm --filter frontend dev\" \"cd backend && symfony serve --no-tls\"",
     "front": "cd frontend && pnpm dev",
-    "back": "cd backend && symfony server:start"
+    "back": "cd backend && symfony serve --no-tls",
+    "messenger": "cd backend && symfony console messenger:consume async -vv"
   },
   "keywords": [],
   "author": "",
