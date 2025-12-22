@@ -49,7 +49,7 @@ cd backend && composer install
 
 # Generate JWT Keys (Required for Login)
 cd backend
-php bin/console lexik:jwt:generate-keypair
+symfony console lexik:jwt:generate-keypair
 
 # Start Docker Containers
 cd ..
@@ -57,8 +57,8 @@ pnpm docker
 
 # Create Database & Schema
 cd backend
-php bin/console doctrine:database:create
-php bin/console doctrine:migrations:migrate
+symfony console doctrine:database:create
+symfony console doctrine:migrations:migrate
 ```
 
 ### 2. Run the App
