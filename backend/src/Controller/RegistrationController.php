@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use function PHPUnit\Framework\isEmpty;
 
 class RegistrationController extends AbstractController
 {
@@ -20,29 +21,51 @@ class RegistrationController extends AbstractController
     {
         $data = json_decode($req->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
+        $postEmail = $data['email'] ?? null;
+        $postUsername = $data['username'] ?? null;
+        $postPassword = $data['password'] ?? null;
 
-        $emailExist = false;
-        $passwordExist = false;
         if (array_key_exists('email', $data) && array_key_exists('password', $data)) {
-            $emailExist = true;
-            $passwordExist = true;
 
-            $postedEmail = $data['email'];
-
-            $userExists = $em->getRepository(User::class)->findOneBy(['email' => $postedEmail]);
-
+            $userExists = $em->getRepository(User::class)->findOneBy(['email' => $postEmail]);
             if ($userExists) {
                 return $this->json(['error' => 'Email already exists'], 409);
             }
 
-            dd('User can be created');
+            $newUser = new User();
 
+            $trimedEmail = trim($postEmail);
+            if (!filter_var($trimedEmail, FILTER_VALIDATE_EMAIL)) {
+                return $this->json(['error' => 'Invalid email format'], 400);
+            }
+            $newUser->setEmail($trimedEmail);
 
-            $postedPassword = $data['password'];
+            $trimedPassword= trim($postPassword);
+            if (!empty($trimedPassword)){
+
+                if (strlen($trimedPassword) < 6) {
+                    return $this->json(['error' => 'Password is too short (min 6 characters)'], 400);
+                }
+
+                $hashedPassword = $hasher->hashPassword($newUser, $trimedPassword);
+                $newUser->setPassword($hashedPassword);
+            }
+
+            $trimedUsername = trim($postUsername);
+            if (!empty($trimedUsername)){
+
+                if (strlen($trimedUsername) < 3) {
+                    return $this->json(['error' => 'Username is too short (min 3 characters)'], 400);
+                }
+                $newUser->setUsername($trimedUsername);
+            }
+
+            $em->persist($newUser);
+            $em->flush();
+
         }
 
 //        dd($data);
-
 //{
 //	"email": "georges.lucas@gmail.com",
 //	"password": "superPassword1234",
@@ -50,9 +73,9 @@ class RegistrationController extends AbstractController
 //}
 
         return $this->json([
-            'data' => $data,
-            "array_key_exists('email, data) ?" => $emailExist,
-            "array_key_exists('password', data) ?" => $passwordExist,
-        ]);
+            'message' => 'User created successfully',
+            'id' => $newUser->getId(),
+            'username' => $newUser->getUsername()
+        ], 201);
     }
 }
