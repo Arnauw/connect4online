@@ -4,12 +4,13 @@ namespace App\Controller;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use function PHPUnit\Framework\isEmpty;
 
 class RegistrationController extends AbstractController
 {
@@ -17,7 +18,12 @@ class RegistrationController extends AbstractController
      * @throws \JsonException
      */
     #[Route('/register', name: 'app_register', methods: ['POST'])]
-    public function index(Request $req, UserPasswordHasherInterface $hasher, EntityManagerInterface $em): Response
+    public function index(
+        Request $req,
+        UserPasswordHasherInterface $hasher,
+        EntityManagerInterface $em,
+        MailerInterface $mailer,
+    ): Response
     {
         $data = json_decode($req->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
@@ -72,10 +78,23 @@ class RegistrationController extends AbstractController
 //	"username": "Le Boss du Puissance 4"
 //}
 
+        $email = (new TemplatedEmail())
+            ->from('no-reply@connect4.com')
+            ->to($newUser->getEmail())
+            ->subject('Verify your email')
+            ->htmlTemplate('emails/verify.html.twig') // We need to create this
+            ->context([
+                'signedUrl' => $signatureComponents->getSignedUrl(),
+            ]);
+
+        $mailer->send($email);
+
         return $this->json([
             'message' => 'User created successfully',
             'id' => $newUser->getId(),
-            'username' => $newUser->getUsername()
+            'email' => $newUser->getEmail(),
+            'username' => $newUser->getUsername(),
         ], 201);
     }
 }
+

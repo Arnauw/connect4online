@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Verify your Email - Connect 4 Online</title>
+    <style type="text/css">
+        /* Client-specific Resets */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Synthwave / Cyberpunk Palette */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f0518; /* Deepest Violet */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e9d5ff; /* Light Lavender Text */
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #1b0e2e; /* Dark Purple Card */
+            border: 1px solid #4a044e; /* Dark Pink Border */
+            border-radius: 16px;
+            overflow: hidden;
+            /* Pink/Purple Glow */
+            box-shadow: 0 0 25px rgba(232, 121, 249, 0.15);
+        }
+
+        .header {
+            background-color: #0f0518;
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 2px solid #2e1065;
+        }
+
+        /* Neon Title */
+        .neon-text {
+            color: #22d3ee; /* Cyan */
+            text-shadow: 0 0 10px #22d3ee, 2px 2px 0px #d946ef; /* Cyan Glow + Pink Drop */
+            font-size: 32px;
+            font-weight: 900;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-style: italic;
+        }
+
+        .content {
+            padding: 45px 30px;
+            line-height: 1.7;
+            color: #e9d5ff;
+        }
+
+        /* The Neon Button (Pink/Purple) */
+        .button {
+            display: inline-block;
+            padding: 16px 36px;
+            background-color: #1b0e2e; /* Transparent/Card bg */
+            color: #e879f9 !important; /* Neon Pink Text */
+            border: 2px solid #e879f9; /* Neon Pink Border */
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 25px;
+            margin-bottom: 25px;
+            /* Pink Glow */
+            box-shadow: 0 0 15px rgba(232, 121, 249, 0.4);
+            text-shadow: 0 0 5px rgba(232, 121, 249, 0.8);
+        }
+
+        .footer {
+            background-color: #0f0518;
+            padding: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b21a8; /* Dark Purple Text */
+        }
+
+        /* Link styling */
+        a.link {
+            color: #22d3ee; /* Cyan Links */
+            text-decoration: none;
+            border-bottom: 1px dashed #22d3ee;
+        }
+    </style>
+</head>
+<body style="background-color: #0f0518;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-height: 100vh; background-color: #0f0518;">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+
+            <!-- Main Container -->
+            <table border="0" cellpadding="0" cellspacing="0" class="container" width="600" style="background-color: #1b0e2e;">
+
+                <!-- Header -->
+                <tr>
+                    <td class="header">
+                        <h1 class="neon-text">Connect <span style="color: #e879f9; text-shadow: 0 0 10px #e879f9;">4</span> Online</h1>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td class="content">
+                        <h2 style="margin-top: 0; color: #ffffff; font-size: 22px;">PLAYER DETECTED.</h2>
+
+                        <p>Protocol initiated. A new link to the neural network has been requested. Authorization is required to proceed.</p>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td align="center">
+                                    <!-- Neon Pink Button -->
+                                    <a
+{#                                        href="{{ signedUrl }}"#}
+                                       class="button">ACTIVATE ACCOUNT</a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-size: 13px; color: #a855f7; margin-top: 25px;">
+                            Manual Override Link:<br>
+                            <a
+{#                                href="{{ signedUrl }}"#}
+                               class="link" style="word-break: break-all;">
+{#                                {{ signedUrl }}#}
+                            </a>
+                        </p>
+
+                        <p style="margin-top: 30px; font-size: 11px; color: #6b21a8; border-top: 1px solid #4a044e; padding-top: 15px;">
+                            [SYSTEM ALERT]: Encryption key expires in T-minus 60 minutes.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+            <!-- End Main Container -->
+
+            <!-- Footer -->
+            <div class="footer">
+                &copy; {{ "now"|date("Y") }} CONNECT 4 ONLINE <br>
+                <span style="letter-spacing: 1px;">PLAY ANYWHERE. ANYTIME.</span>
+            </div>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
