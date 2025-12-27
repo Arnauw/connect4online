@@ -78,16 +78,15 @@ class RegistrationController extends AbstractController
 //	"username": "Le Boss du Puissance 4"
 //}
 
-        $email = (new TemplatedEmail())
-            ->from('no-reply@connect4.com')
-            ->to($newUser->getEmail())
-            ->subject('Verify your email')
-            ->htmlTemplate('emails/verify.html.twig') // We need to create this
-            ->context([
-                'signedUrl' => $signatureComponents->getSignedUrl(),
-            ]);
-
-        $mailer->send($email);
+//        $email = (new TemplatedEmail())
+//            ->from('no-reply@connect4.com')
+//            ->to($newUser->getEmail())
+//            ->subject('Verify your email')
+//            ->htmlTemplate('emails/verify.html.twig') // We need to create this
+//            ->context([
+//                'signedUrl' => $signatureComponents->getSignedUrl(),
+//            ]);
+//        $mailer->send($email);
 
         return $this->json([
             'message' => 'User created successfully',
