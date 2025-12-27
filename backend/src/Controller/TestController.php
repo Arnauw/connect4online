@@ -11,7 +11,13 @@ final class TestController extends AbstractController
     #[Route('/test', name: 'app_test')]
     public function index(): Response
     {
-        return $this->render('emails/verify.html.twig', [
+//        // Register mail
+//        return $this->render('emails/verify.html.twig', [
+//
+//        ]);
+
+//        // Recover Password Mail
+        return $this->render('emails/reset_password.html.twig', [
 
         ]);
     }
