@@ -1,5 +1,4 @@
 import {useEffect, useRef, useState} from "react";
-import {useNavigate} from "react-router-dom";
 import {type Cell, type ColumnIndex, Connect4, type Player} from "../../logic/Connect4.ts";
 import {MenuButton} from "../ui/MenuButton.tsx";
 
@@ -20,7 +19,6 @@ const getCellClass = (cell: Cell): string => {
 };
 
 export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
-    const navigate = useNavigate();
     const [game, setGame] = useState<Connect4>(() => new Connect4());
     const [board, setBoard] = useState<Cell[][]>(game.board);
     const [currentPlayer, setCurrentPlayer] = useState<Player>(game.currentPlayer);
@@ -29,6 +27,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     const workerRef = useRef<Worker | null>(null);
     
     // We must import Worker that way because it needs to use a different Thread
+    // (So it's not blocked when we increase the strength of the bot later with the minimax algo)
     useEffect(() => {
         workerRef.current = new Worker(
             new URL('../../workers/bot.worker.ts', import.meta.url),
@@ -78,21 +77,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
         <div className="min-h-screen w-full flex flex-col items-center relative">
 
             <div className="w-full flex flex-col items-center pt-6 pb-2 shrink-0 z-20">
-                <button
-                    onClick={() => navigate('/')}
-                    className="absolute top-6 left-6 p-2 text-cyan-400 hover:text-cyan-100 transition-colors flex items-center gap-2 group"
-                >
-                    <div
-                        className="p-2 rounded-full border border-cyan-500/30 group-hover:border-cyan-400 group-hover:bg-cyan-950/50 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5}
-                             stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-                        </svg>
-                    </div>
-                    <span className="font-bold tracking-widest hidden sm:block text-sm">MENU</span>
-                </button>
-
-                <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-cyan-300 to-blue-500 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
                     Connect 4
                 </h1>
                 <h2 className="text-cyan-400 font-bold tracking-widest uppercase mb-4 animate-pulse text-sm md:text-base pt-12">

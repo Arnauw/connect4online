@@ -1,10 +1,13 @@
 import './App.css'
-import {HashRouter, Outlet, Route, Routes} from "react-router-dom";
+import {HashRouter, Navigate, Outlet, Route, Routes} from "react-router-dom";
 import {Home} from "./pages/Home.tsx";
 import {LocalGame1P} from "./pages/LocalGame1P.tsx";
 import {LocalGame2P} from "./pages/LocalGame2P.tsx";
 import {OnlineGame} from "./pages/OnlineGame.tsx";
 import {PageLayout} from "./components/layout/PageLayout.tsx";
+import {Login} from "./pages/Login.tsx";
+import {Register} from "./pages/Register.tsx";
+import {Profile} from "./pages/Profile.tsx";
 
 const LayoutWrapper = () => {
     return (
@@ -24,6 +27,10 @@ function App() {
                     <Route path="/local1p" element={<LocalGame1P/>}/>
                     <Route path="/local2p" element={<LocalGame2P/>}/>
                     <Route path="/online" element={<OnlineGame/>}/>
+                    <Route path="/login" element={<Login/>}/>
+                    <Route path="/register" element={<Register/>}/>
+                    <Route path="/profile" element={<Profile/>}/>
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
             </Routes>
         </HashRouter>
