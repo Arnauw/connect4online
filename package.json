@@ -12,12 +12,13 @@
     "front": "cd frontend && pnpm dev",
     "back": "cd backend && symfony serve --no-tls",
     "clear": "cd backend && symfony console cache:clear",
-    "messenger": "cd backend && symfony console messenger:consume async -vv"
+    "messenger": "cd backend && symfony console messenger:consume async -vv",
+    "installAll": "concurrently \"cd frontend && pnpm install\" \"cd backend && composer install\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.26.1",
+  "packageManager": "pnpm@10.27.0",
   "devDependencies": {
     "concurrently": "^9.2.1"
   }
