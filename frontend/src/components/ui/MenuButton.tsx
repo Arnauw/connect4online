@@ -4,14 +4,16 @@ interface MenuButtonProps {
     children: ReactNode;
     onClick?: () => void;
     secondary?: boolean;
+    type?: "button" | "submit" | "reset";
 }
 
 export const MenuButton = (
-    {children, onClick, secondary = false}: MenuButtonProps
+    {children, onClick, secondary = false, type = "button"}: MenuButtonProps
 ) => {
 
     return (
         <button
+            type={type}
             onClick={onClick}
             className={`
                 w-full max-w-md py-3 rounded-full 

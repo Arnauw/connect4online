@@ -24,19 +24,19 @@ security:
             user_checker: App\Security\UserChecker
             json_login:
                 check_path: /api/login_check
-                username_path: email # Expects JSON {"email": "..."}
+                username_path: email
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
         # The API: Everything else under /api requires a valid JWT Token
         api:
-            pattern:   ^/api
+            pattern: ^/api
             stateless: true
             jwt: ~
 
-#        main:
-#            lazy: true
-#            provider: app_user_provider
+            #        main:
+            #            lazy: true
+            #            provider: app_user_provider
 
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -52,7 +52,7 @@ security:
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/verify, roles: PUBLIC_ACCESS }
         - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
-        - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:

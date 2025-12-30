@@ -10,6 +10,8 @@ import {Register} from "./pages/Register.tsx";
 import {Profile} from "./pages/Profile.tsx";
 import {ForgotPassword} from "./pages/ForgotPassword.tsx";
 import {ResetPassword} from "./pages/ResetPassword.tsx";
+import {Settings} from "./pages/Settings.tsx";
+import {ProtectedRoute} from "./components/layout/ProtectedRoute.tsx";
 
 const LayoutWrapper = () => {
     return (
@@ -31,10 +33,14 @@ function App() {
                     <Route path="/online" element={<OnlineGame/>}/>
                     <Route path="/login" element={<Login/>}/>
                     <Route path="/register" element={<Register/>}/>
-                    <Route path="/profile" element={<Profile/>}/>
                     <Route path="/forgot-password" element={<ForgotPassword/>}/>
                     <Route path="/reset-password" element={<ResetPassword/>}/>
                     <Route path="*" element={<Navigate to="/" replace />} />
+
+                    <Route element={<ProtectedRoute/>}>
+                        <Route path="/settings" element={<Settings/>} />
+                        <Route path="/profile" element={<Profile/>}/>
+                    </Route>
                 </Route>
             </Routes>
         </HashRouter>

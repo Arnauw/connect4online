@@ -35,8 +35,12 @@ export const Profile = () => {
                 </div>
 
                 <div className="mt-8 flex flex-col gap-4">
-                    <MenuButton secondary onClick={() => alert("Settings coming soon!")}>Settings</MenuButton>
-                    <MenuButton onClick={handleLogout}>LOGOUT</MenuButton>
+                    <MenuButton secondary onClick={() => navigate('/settings')}>
+                        Settings
+                    </MenuButton>
+                    <MenuButton onClick={handleLogout}>
+                        LOGOUT
+                    </MenuButton>
                 </div>
             </div>
 

@@ -79,7 +79,7 @@ export const UserProfileBadge = ({ user, onLogout }: UserProfileBadgeProps) => {
                 </div>
 
                 <button
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate('/settings')}
                     className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-600 bg-slate-900/60 text-xs text-slate-300 hover:border-cyan-400 hover:text-cyan-400 transition-all hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">

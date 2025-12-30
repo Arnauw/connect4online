@@ -1,20 +1,28 @@
-import {type ChangeEvent, useState} from "react";
+import { type ChangeEvent, type FormEvent, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { NeonInput } from "../components/ui/NeonInput";
 import { MenuButton } from "../components/ui/MenuButton";
 
+interface RegisterFormData {
+    email: string;
+    username: string;
+    password: string;
+}
+
 export const Register = () => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ email: "", username: "", password: "" });
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState<RegisterFormData>({ email: "", username: "", password: "" });
+    const [error, setError] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e?: FormEvent) => {
+        if (e) e.preventDefault();
+
         setError("");
         setLoading(true);
 
@@ -53,7 +61,10 @@ export const Register = () => {
                 NEW PLAYER
             </h1>
 
-            <div className="flex flex-col gap-6 w-full max-w-md bg-slate-900/50 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(168,85,247,0.15)]">
+            <form
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-6 w-full max-w-md bg-slate-900/50 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(168,85,247,0.15)]"
+            >
                 <NeonInput
                     label="Email"
                     name="email"
@@ -83,15 +94,15 @@ export const Register = () => {
                 )}
 
                 <div className="mt-4">
-                    <MenuButton onClick={handleSubmit}>
+                    <MenuButton type="submit">
                         {loading ? "PROCESSING..." : "REGISTER"}
                     </MenuButton>
                 </div>
 
                 <div className="text-center text-slate-400 text-sm">
-                    Already registered? <Link to="/login" className="text-cyan-400 hover:text-cyan-200 font-bold underline">Login</Link>
+                    Already registered? <Link to="/login" className="text-cyan-400 hover:text-cyan-200 font-bold underline transition-colors">Login</Link>
                 </div>
-            </div>
+            </form>
         </div>
     );
 };

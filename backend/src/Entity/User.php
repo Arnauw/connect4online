@@ -21,7 +21,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             'theme' => 'dark-neon',
             'music' => true,
             'volume' => 50,
-            'isSubscribedToNewsletter' => false,
         ];
         $this->isVerified = false;
     }
