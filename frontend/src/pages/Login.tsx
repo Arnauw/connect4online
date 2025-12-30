@@ -38,7 +38,7 @@ export const Login = () => {
         setSuccess("");
 
         try {
-            const response = await axios.post("http://127.0.0.1:8000/api/login_check", {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/login_check`, {
                 email,
                 password
             });
@@ -102,6 +102,12 @@ export const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
+
+                <div className="text-right">
+                    <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-cyan-400 transition-colors">
+                        Forgot Password?
+                    </Link>
+                </div>
 
                 <div className="mt-4">
                     <MenuButton onClick={handleSubmit}>ACCESS GRID</MenuButton>

@@ -8,6 +8,8 @@ import {PageLayout} from "./components/layout/PageLayout.tsx";
 import {Login} from "./pages/Login.tsx";
 import {Register} from "./pages/Register.tsx";
 import {Profile} from "./pages/Profile.tsx";
+import {ForgotPassword} from "./pages/ForgotPassword.tsx";
+import {ResetPassword} from "./pages/ResetPassword.tsx";
 
 const LayoutWrapper = () => {
     return (
@@ -30,6 +32,8 @@ function App() {
                     <Route path="/login" element={<Login/>}/>
                     <Route path="/register" element={<Register/>}/>
                     <Route path="/profile" element={<Profile/>}/>
+                    <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                    <Route path="/reset-password" element={<ResetPassword/>}/>
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
             </Routes>

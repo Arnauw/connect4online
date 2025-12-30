@@ -6,6 +6,7 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -86,30 +87,31 @@ class RegistrationController extends AbstractController
     public function verifyUserEmail(
         Request $request,
         VerifyEmailHelperInterface $verifyEmailHelper,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        #[Autowire(env: 'REACT_APP_URI')] string $reactAppUri
     ): Response
     {
         $id = $request->query->get('id');
 
         if (null === $id) {
-            return $this->redirect('http://localhost:5173/#/login?error=missing_id');
+            return $this->redirect($reactAppUri . '/#/login?error=missing_id');
         }
 
         $user = $entityManager->getRepository(User::class)->find($id);
 
         if (null === $user) {
-            return $this->redirect('http://localhost:5173/#/login?error=user_not_found');
+            return $this->redirect($reactAppUri . '/#/login?error=user_not_found');
         }
 
         try {
             $verifyEmailHelper->validateEmailConfirmationFromRequest($request, $user->getId(), $user->getEmail());
         } catch (VerifyEmailExceptionInterface $e) {
-            return $this->redirect('http://localhost:5173/#/login?error=invalid_token');
+            return $this->redirect($reactAppUri . '/#/login?error=invalid_token');
         }
 
         $user->setIsVerified(true);
         $entityManager->flush();
 
-        return $this->redirect('http://localhost:5173/#/login?verified=true');
+        return $this->redirect($reactAppUri . '/#/login?verified=true');
     }
 }

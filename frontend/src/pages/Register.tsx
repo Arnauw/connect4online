@@ -19,7 +19,7 @@ export const Register = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post("http://127.0.0.1:8000/api/register", formData);
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/register`, formData);
             console.log("Registration Success:", response.data);
             navigate("/login", {
                 state: {successMessage: "Identity initialized. ACCESS LOCKED. Check your email inbox to activate neural link."}
