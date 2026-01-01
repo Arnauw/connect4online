@@ -1,6 +1,6 @@
 import { type ChangeEvent, type FormEvent, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import { api } from "../api/axios";
 import { NeonInput } from "../components/ui/NeonInput";
 import { MenuButton } from "../components/ui/MenuButton";
 
@@ -27,7 +27,7 @@ export const Register = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/register`, formData);
+            const response = await api.post(`${import.meta.env.VITE_API_URL}/api/register`, formData);
             console.log("Registration Success:", response.data);
             navigate("/login", {
                 state: {successMessage: "Identity initialized. ACCESS LOCKED. Check your email inbox to activate neural link."}
@@ -57,7 +57,7 @@ export const Register = () => {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-8">
-            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-600 drop-shadow-[0_0_10px_rgba(232,121,249,0.5)]">
+            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-fuchsia-400 to-purple-600 drop-shadow-[0_0_10px_rgba(232,121,249,0.5)]">
                 NEW PLAYER
             </h1>
 

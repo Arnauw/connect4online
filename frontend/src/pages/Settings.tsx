@@ -1,6 +1,6 @@
 import {useState, useRef, useEffect, type FormEvent, type ChangeEvent} from "react";
 import {useNavigate} from "react-router-dom";
-import axios from "axios";
+import { api } from "../api/axios";
 import {useAuth} from "../context/AuthContext";
 import {MenuButton} from "../components/ui/MenuButton";
 import {NeonToggle} from "../components/ui/NeonToggle";
@@ -26,7 +26,7 @@ export const Settings = () => {
     const [settings, setSettings] = useState<UserSettings>(initialSettings);
     const [saving, setSaving] = useState<boolean>(false);
     const [success, setSuccess] = useState<string>("");
-    const [imgError, setImgError] = useState(false);
+    const [imgError, setImgError] = useState<boolean>(false);
 
     useEffect(() => {
         if (user?.settings) {
@@ -53,7 +53,7 @@ export const Settings = () => {
         setSuccess("");
 
         try {
-            const response = await axios.post(
+            const response = await api.post(
                 `${import.meta.env.VITE_API_URL}/api/me/avatar`,
                 formData,
                 {
@@ -80,7 +80,7 @@ export const Settings = () => {
         setSuccess("");
 
         try {
-            await axios.patch(
+            await api.patch(
                 `${import.meta.env.VITE_API_URL}/api/me/settings`,
                 settings,
                 {headers: {Authorization: `Bearer ${token}`}}

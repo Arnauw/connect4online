@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {useNavigate, Link, useLocation, useSearchParams} from "react-router-dom";
-import axios from "axios";
+import {api} from "../api/axios";
 import {NeonInput} from "../components/ui/NeonInput";
 import {MenuButton} from "../components/ui/MenuButton";
 import {useAuth} from "../context/AuthContext";
@@ -31,6 +31,10 @@ export const Login = () => {
         if (errorParam === "invalid_token") {
             setError("VERIFICATION FAILED: Link expired or invalid.");
         }
+
+        if (errorParam === "session_expired") {
+            setError("SESSION EXPIRED: Please re-authenticate.");
+        }
     }, [location, searchParams]);
 
     const handleSubmit = async () => {
@@ -38,10 +42,14 @@ export const Login = () => {
         setSuccess("");
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/login_check`, {
-                email,
-                password
-            });
+            const response = await api.post(
+                `${import.meta.env.VITE_API_URL}/api/login_check`,
+                {
+                    email,
+                    password
+                });
+
+            localStorage.setItem("refresh_token", response.data.refresh_token);
 
             login(response.data.token);
             navigate("/");

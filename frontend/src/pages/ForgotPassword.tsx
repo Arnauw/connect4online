@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { api } from "../api/axios";
 import { NeonInput } from "../components/ui/NeonInput";
 import { MenuButton } from "../components/ui/MenuButton";
 
@@ -16,7 +16,7 @@ export const ForgotPassword = () => {
         setLoading(true);
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/reset-password/request`, { email });
+            await api.post(`${import.meta.env.VITE_API_URL}/api/reset-password/request`, { email });
             setMessage("If an account matches that email, a recovery link has been sent.");
         } catch (err: any) {
             console.error(err);
