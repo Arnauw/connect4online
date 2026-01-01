@@ -27,7 +27,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({children}: { children: ReactNode }) => {
     const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
-    const [user, setUser] = useState<JwtPayload | null>(null);
+    const [user, setUser] = useState<JwtPayload | null>(() => {
+        if (!token) return null;
+        try {
+            const decoded = jwtDecode<JwtPayload>(token);
+            if (decoded.exp * 1000 < Date.now()) return null;
+            return decoded;
+        } catch {
+            return null;
+        }
+    });
 
     const login = (newToken: string) => {
         localStorage.setItem("token", newToken);

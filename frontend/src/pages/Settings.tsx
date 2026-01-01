@@ -1,10 +1,10 @@
-import {useState, type FormEvent, useEffect} from "react";
-import { useNavigate } from "react-router-dom";
+import {useState, useRef, useEffect, type FormEvent, type ChangeEvent} from "react";
+import {useNavigate} from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext";
-import { MenuButton } from "../components/ui/MenuButton";
-import { NeonToggle } from "../components/ui/NeonToggle";
-import { NeonSlider } from "../components/ui/NeonSlider";
+import {useAuth} from "../context/AuthContext";
+import {MenuButton} from "../components/ui/MenuButton";
+import {NeonToggle} from "../components/ui/NeonToggle";
+import {NeonSlider} from "../components/ui/NeonSlider";
 
 interface UserSettings {
     theme?: string;
@@ -13,9 +13,10 @@ interface UserSettings {
 }
 
 export const Settings = () => {
-    const { user, token, updateUser } = useAuth();
+    const {user, token, updateUser} = useAuth();
     const navigate = useNavigate();
-    
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const initialSettings = user?.settings || {
         theme: 'dark-neon',
         music: true,
@@ -25,15 +26,51 @@ export const Settings = () => {
     const [settings, setSettings] = useState<UserSettings>(initialSettings);
     const [saving, setSaving] = useState<boolean>(false);
     const [success, setSuccess] = useState<string>("");
+    const [imgError, setImgError] = useState(false);
 
     useEffect(() => {
         if (user?.settings) {
             setSettings(user.settings);
         }
+        setImgError(false);
     }, [user]);
 
     const updateSetting = (key: string, value: any) => {
-        setSettings(prev => ({ ...prev, [key]: value }));
+        setSettings(prev => ({...prev, [key]: value}));
+    };
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append("avatar", file);
+
+        setSuccess("");
+
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/me/avatar`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            setImgError(false);
+            updateUser({avatar: response.data.avatarUrl});
+            setSuccess("AVATAR UPLOADED.");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to upload avatar.");
+        }
     };
 
     const handleSave = async (e?: FormEvent) => {
@@ -46,10 +83,10 @@ export const Settings = () => {
             await axios.patch(
                 `${import.meta.env.VITE_API_URL}/api/me/settings`,
                 settings,
-                { headers: { Authorization: `Bearer ${token}` } }
+                {headers: {Authorization: `Bearer ${token}`}}
             );
 
-            updateUser({ settings: settings });
+            updateUser({settings: settings});
 
             setSuccess("CONFIGURATION SAVED.");
         } catch (err) {
@@ -59,6 +96,16 @@ export const Settings = () => {
             setSaving(false);
         }
     };
+
+    const getAvatarSrc = () => {
+        if (!user?.avatar) return null;
+        if (user.avatar === "default-avatar.jpg") return null;
+        if (user.avatar.startsWith('http')) return user.avatar;
+        if (user.avatar.startsWith('/')) return `${import.meta.env.VITE_API_URL}${user.avatar}`;
+        return `${import.meta.env.VITE_API_URL}/uploads/avatars/${user.avatar}`;
+    };
+
+    const avatarSrc = getAvatarSrc();
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-8">
@@ -70,6 +117,48 @@ export const Settings = () => {
                 onSubmit={handleSave}
                 className="flex flex-col gap-6 w-full max-w-md bg-slate-900/80 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.1)]"
             >
+
+                <div className="flex flex-col items-center gap-4 pb-6 border-b border-slate-700">
+                    <div
+                        onClick={handleAvatarClick}
+                        className="relative w-24 h-24 rounded-full border-2 border-cyan-400 cursor-pointer overflow-hidden group hover:scale-105 transition-transform shadow-[0_0_15px_cyan]"
+                    >
+                        {avatarSrc && !imgError ? (
+                            <img
+                                src={avatarSrc}
+                                alt="Avatar"
+                                className="w-full h-full object-cover"
+                                onError={() => setImgError(true)}
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                     className="w-12 h-12 text-cyan-200/70">
+                                    <path fillRule="evenodd"
+                                          d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
+                                          clipRule="evenodd"/>
+                                </svg>
+                            </div>
+                        )}
+
+                        <div
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-xs font-bold text-white tracking-widest">EDIT</span>
+                        </div>
+                    </div>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept="image/*"
+                    />
+                    
+                    <span className="text-slate-400 text-[12px] text-center max-w-100">
+                        Tap to update avatar (Max 10MB • JPG/PNG)
+                    </span>
+                </div>
                 
                 <div className="space-y-4 border-b border-slate-700 pb-6">
                     <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Audio Protocol</h3>
@@ -86,7 +175,7 @@ export const Settings = () => {
                         onChange={(val) => updateSetting('music', val)}
                     />
                 </div>
-
+                
                 <div className="space-y-4">
                     <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Visuals</h3>
 
@@ -94,7 +183,7 @@ export const Settings = () => {
                         <div className="flex flex-col">
                             <span className="text-slate-300 font-bold uppercase text-sm">Theme</span>
                             <span className="text-[10px] text-slate-500 italic mt-1">
-                                More themes coming soon...
+                                More themes coming...
                             </span>
                         </div>
                         <span className="text-cyan-400 font-mono text-sm border border-cyan-500/30 px-3 py-1 rounded">
@@ -104,13 +193,15 @@ export const Settings = () => {
                 </div>
 
                 {success && (
-                    <div className="bg-green-900/30 border border-green-500/50 text-green-400 px-4 py-2 rounded text-center text-xs font-bold shadow-[0_0_10px_green] animate-pulse">
+                    <div
+                        className="bg-green-900/30 border border-green-500/50 text-green-400 px-4 py-2 rounded text-center text-xs font-bold shadow-[0_0_10px_green] animate-pulse">
                         ✅ {success}
                     </div>
                 )}
 
                 <div className="flex flex-col gap-3 mt-4">
-                    <MenuButton onClick={() => {}} type="submit">
+                    <MenuButton onClick={() => {
+                    }} type="submit">
                         {saving ? "SAVING..." : "APPLY CHANGES"}
                     </MenuButton>
 
