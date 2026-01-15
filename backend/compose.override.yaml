@@ -20,6 +20,12 @@ services:
   mercure:
     ports:
       - "9090:80"
+    environment:
+      # Keep this (Disables HTTPS), we will need to change it in prod
+      SERVER_NAME: ':80'
+      # We allow both localhost and 127.0.0.1 for the frontend
+      MERCURE_EXTRA_DIRECTIVES: |
+        cors_origins ${REACT_APP_URI} http://127.0.0.1:${REACT_APP_DEFAULT_PORT:-5173}
   ###< symfony/mercure-bundle ###
 
   ###> adminer ###
