@@ -12,6 +12,7 @@ import {ForgotPassword} from "./pages/ForgotPassword.tsx";
 import {ResetPassword} from "./pages/ResetPassword.tsx";
 import {Settings} from "./pages/Settings.tsx";
 import {ProtectedRoute} from "./components/layout/ProtectedRoute.tsx";
+import {OnlineBoard} from "./pages/OnlineBoard.tsx";
 
 const LayoutWrapper = () => {
     return (
@@ -31,6 +32,7 @@ function App() {
                     <Route path="/local1p" element={<LocalGame1P/>}/>
                     <Route path="/local2p" element={<LocalGame2P/>}/>
                     <Route path="/online" element={<OnlineGame/>}/>
+                    <Route path="/online/:roomCode" element={<OnlineBoard/>} />
                     <Route path="/login" element={<Login/>}/>
                     <Route path="/register" element={<Register/>}/>
                     <Route path="/forgot-password" element={<ForgotPassword/>}/>

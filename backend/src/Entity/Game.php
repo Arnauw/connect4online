@@ -8,6 +8,15 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 class Game
 {
+////    Add this for the default board when creating new game
+////    Already handled by Controller but it's best pratice.
+//    public function __construct()
+//    {
+//        $this->board = array_fill(0, 6, array_fill(0, 7, 0));
+//        $this->status = 'WAITING';
+//        $this->currentTurn = 1;
+//    }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
