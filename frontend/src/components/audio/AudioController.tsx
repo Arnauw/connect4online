@@ -1,29 +1,53 @@
 import { useEffect, useRef } from "react";
 import bgmFile from "../../assets/musics/Grid of Lights.mp3";
-import {useAuth} from "../../context/AuthContext.tsx";
+import { useAuth } from "../../context/AuthContext.tsx";
 
 export const AudioController = () => {
     const { user } = useAuth();
     const audioRef = useRef<HTMLAudioElement | null>(null);
+
     const musicEnabled = user?.settings?.music ?? true;
     const volume = user?.settings?.volume ?? 50;
 
     useEffect(() => {
-        if (audioRef.current) {
-            // Convert 0-100 scale to 0.0-1.0 scale for HTML Audio
-            audioRef.current.volume = volume / 100;
+        const audio = audioRef.current;
+        if (!audio) return;
 
-            if (musicEnabled) {
-                // Browsers block autoplay unless the user has interacted with the page.
-                // We wrap it in a catch block so it doesn't throw angry red errors on first load.
-                audioRef.current.play().catch(() => {
-                    console.log("Waiting for user interaction to play audio...");
-                });
-            } else {
-                audioRef.current.pause();
+        // Set volume (0.0 to 1.0)
+        audio.volume = volume / 100;
+
+        // The function that attempts to play the music
+        const playAudio = () => {
+            if (musicEnabled && audio.paused) {
+                audio.play()
+                    .then(() => {
+                        // SUCCESS! The browser allowed it.
+                        // Now we remove the listeners so they don't fire on every single click.
+                        document.removeEventListener("click", playAudio);
+                        document.removeEventListener("keydown", playAudio);
+                    })
+                    .catch(() => {
+                        console.log("Browser still blocking audio. Waiting for interaction...");
+                    });
             }
+        };
+
+        if (musicEnabled) {
+            playAudio(); // Try immediately (might fail if no interaction yet)
+
+            // Add global listeners to catch the user's first click or key press
+            document.addEventListener("click", playAudio);
+            document.addEventListener("keydown", playAudio);
+        } else {
+            audio.pause();
         }
-    },[musicEnabled, volume]);
+
+        // Cleanup function
+        return () => {
+            document.removeEventListener("click", playAudio);
+            document.removeEventListener("keydown", playAudio);
+        };
+    }, [musicEnabled, volume]);
 
     return (
         <audio
