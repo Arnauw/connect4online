@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import bgImg from "../../assets/imgs/background.png";
 import { UserProfileBadge } from "../ui/UserProfileBadge";
 import { useAuth } from "../../context/AuthContext";
+import { AudioController } from "../audio/AudioController";
 
 type PageLayoutProps = {
     children: ReactNode;
@@ -27,6 +28,7 @@ export const PageLayout = ({children}: PageLayoutProps) => {
             {/* Dark overlay  because it looks better */}
             <div className="absolute inset-0 bg-black/20 pointer-events-none" />
 
+            <AudioController />
             <UserProfileBadge user={user} onLogout={logout} />
             
             {!isHomePage && (
