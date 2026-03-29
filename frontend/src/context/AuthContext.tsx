@@ -10,6 +10,7 @@ interface JwtPayload {
     settings?: {
         theme?: string;
         music?: boolean;
+        sfx?: boolean;
         volume?: number;
     };
     exp: number;

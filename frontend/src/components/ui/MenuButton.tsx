@@ -1,20 +1,26 @@
-import type {ReactNode} from "react";
+import type { ReactNode } from "react";
+import { useSoundEffect } from "../../hooks/useSoundEffect";
+import clickSfx from "../../assets/sfx/click.ogg";
 
 interface MenuButtonProps {
     children: ReactNode;
-    onClick?: () => void;
+    onClick?: (e: never) => void;
     secondary?: boolean;
     type?: "button" | "submit" | "reset";
 }
 
-export const MenuButton = (
-    {children, onClick, secondary = false, type = "button"}: MenuButtonProps
-) => {
+export const MenuButton = ({ children, onClick, secondary = false, type = "button" }: MenuButtonProps) => {
+    const playSound = useSoundEffect();
+
+    const handleClick = (e: never) => {
+        playSound(clickSfx);
+        if (onClick) onClick(e);
+    };
 
     return (
         <button
             type={type}
-            onClick={onClick}
+            onClick={handleClick}
             className={`
                 w-full max-w-md py-3 rounded-full 
                 font-bold text-lg tracking-wider transition-all duration-300
@@ -22,7 +28,7 @@ export const MenuButton = (
                 active:scale-95
                 ${secondary
                 ? "border-slate-500 text-slate-300 hover:bg-slate-800/50"
-                : "border-cyan-400 text-white shadow-[0_0_10px_rgba(34,211,238,0.5)] " 
+                : "border-cyan-400 text-white shadow-[0_0_10px_rgba(34,211,238,0.5)] "
                 + "hover:bg-cyan-950/40 hover:shadow-[0_0_20px_rgba(34,211,238,0.7)]"
             }
             `}

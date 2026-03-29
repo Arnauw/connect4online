@@ -1,6 +1,6 @@
 import {useState, useRef, useEffect, type FormEvent, type ChangeEvent} from "react";
 import {useNavigate} from "react-router-dom";
-import { api } from "../api/axios";
+import {api} from "../api/axios";
 import {useAuth} from "../context/AuthContext";
 import {MenuButton} from "../components/ui/MenuButton";
 import {NeonToggle} from "../components/ui/NeonToggle";
@@ -9,6 +9,7 @@ import {NeonSlider} from "../components/ui/NeonSlider";
 interface UserSettings {
     theme?: string;
     music?: boolean;
+    sfx?: boolean;
     volume?: number;
 }
 
@@ -20,6 +21,7 @@ export const Settings = () => {
     const initialSettings = user?.settings || {
         theme: 'dark-neon',
         music: true,
+        sfx: true,
         volume: 50,
     };
 
@@ -154,12 +156,12 @@ export const Settings = () => {
                         className="hidden"
                         accept="image/*"
                     />
-                    
+
                     <span className="text-slate-400 text-[12px] text-center max-w-100">
                         Tap to update avatar (Max 10MB • JPG/PNG)
                     </span>
                 </div>
-                
+
                 <div className="space-y-4 border-b border-slate-700 pb-6">
                     <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Audio Protocol</h3>
 
@@ -174,8 +176,14 @@ export const Settings = () => {
                         checked={settings.music ?? true}
                         onChange={(val) => updateSetting('music', val)}
                     />
+
+                    <NeonToggle
+                        label="Sound Effects (SFX)"
+                        checked={settings.sfx ?? true}
+                        onChange={(val) => updateSetting('sfx', val)}
+                    />
                 </div>
-                
+
                 <div className="space-y-4">
                     <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Visuals</h3>
 
