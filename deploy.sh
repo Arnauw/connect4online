@@ -15,7 +15,8 @@ cd ..
 # 2. Prepare the Symfony Backend
 echo "🐘 Installing backend dependencies..."
 cd backend
-# We use --no-dev to exclude dev tools (like MakerBundle or Profiler) for security and speed
+# Explicitly set the environment to prod for Composer scripts
+export APP_ENV=prod
 composer install --no-dev --optimize-autoloader
 
 # 3. Spin up Docker Services
