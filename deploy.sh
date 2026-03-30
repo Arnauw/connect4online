@@ -21,8 +21,11 @@ composer install --no-dev --optimize-autoloader
 
 # 3. Spin up Docker Services
 echo "🐳 Starting Docker containers..."
-# Pull latest images and start services in detached mode
 docker compose --env-file .env.local up -d --build
+
+# Give PostgreSQL time to fully boot and accept connections
+echo "⏳ Waiting for the database to initialize..."
+sleep 10
 
 # 4. Run Database Migrations
 echo "🗄️ Executing database migrations..."
