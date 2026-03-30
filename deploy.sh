@@ -29,15 +29,18 @@ sleep 10
 
 # 4. Run Database Migrations
 echo "🗄️ Executing database migrations..."
-# --no-interaction prevents the script from pausing to ask "Are you sure?"
 APP_ENV=prod php bin/console doctrine:migrations:migrate --no-interaction
 
-# 5. Clear and Warm up the Production Cache
+# 5. Generate JWT Keys for Authentication
+echo "🔑 Verifying JWT SSL keys..."
+APP_ENV=prod php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
+# 6. Clear and Warm up the Production Cache
 echo "🧹 Clearing Symfony production cache..."
 APP_ENV=prod php bin/console cache:clear
 cd ..
 
-# 6. Secure Permissions
+# 7. Secure Permissions
 # Building the frontend and installing composer packages creates new files.
 # We must re-apply your fedora:nginx permissions so the web server doesn't get locked out.
 echo "🔐 Resetting file permissions..."
