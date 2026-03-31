@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
@@ -67,7 +68,7 @@ class RegistrationController extends AbstractController
         );
 
         $email = new TemplatedEmail()
-            ->from('no-reply@connect4.online')
+            ->from(new Address('me@arnaudrabel.com', 'Connect 4 Online Registration'))
             ->to($user->getEmail())
             ->subject('Initialize Account Sequence')
             ->htmlTemplate('emails/verify.html.twig')
