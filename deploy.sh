@@ -47,5 +47,9 @@ echo "🔐 Resetting file permissions..."
 sudo chown -R fedora:nginx /var/www/mywebapps/
 sudo find /var/www/mywebapps/ -type d -exec chmod 775 {} \;
 sudo find /var/www/mywebapps/ -type f -exec chmod 664 {} \;
+sudo chown -R fedora:nginx /var/www/mywebapps/connect4online/backend/config
+sudo chmod -R 775 /var/www/mywebapps/connect4online/backend/config
+
+chmod +x ./deploy.sh
 
 echo "✅ Deployment complete!"
