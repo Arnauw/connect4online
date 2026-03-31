@@ -1,8 +1,11 @@
 import {useEffect, useRef, useState} from "react";
 import {type Cell, type ColumnIndex, Connect4, type Player} from "../../logic/Connect4.ts";
 import {MenuButton} from "../ui/MenuButton.tsx";
-import { useSoundEffect } from "../../hooks/useSoundEffect";
+import {useSoundEffect} from "../../hooks/useSoundEffect";
 import dropSfx from "../../assets/sfx/drop.ogg";
+import winSfx from "../../assets/sfx/victory.mp3";
+import loseSfx from "../../assets/sfx/loss.mp3";
+import drawSfx from "../../assets/sfx/draw.mp3";
 
 type GameBoardProps = {
     title?: string;
@@ -28,7 +31,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     const [isGameOver, setIsGameOver] = useState<boolean>(game.gameOver);
     const workerRef = useRef<Worker | null>(null);
     const playSound = useSoundEffect();
-    
+
     // We must import Worker that way because it needs to use a different Thread
     // (So it's not blocked when we increase the strength of the bot later with the minimax algo)
     useEffect(() => {
@@ -41,6 +44,19 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
             workerRef.current?.terminate();
         };
     }, []);
+
+    // UseEffect to handle end game sounds.
+    useEffect(() => {
+        if (!isGameOver) return;
+
+        if (winner === 1) {
+            playSound(winSfx);
+        } else if (winner === 2) {
+            playSound(loseSfx);
+        } else {
+            playSound(drawSfx);
+        }
+    }, [winner, isGameOver, playSound]);
 
     const handleDrop = (col: ColumnIndex) => {
         if (game.dropPiece(col)) {
@@ -64,7 +80,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     useEffect(() => {
         if (currentPlayer === 2 && vsBot && !winner && !isGameOver) {
             if (!workerRef.current) return;
-            
+
             workerRef.current.onmessage = (e) => {
                 const colIndex = e.data as ColumnIndex;
                 handleDrop(colIndex);
@@ -126,8 +142,12 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
                                     }}
                                     className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 p-1 md:p-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
                                 >
-                                    <div
-                                        className={`w-full h-full rounded-full transition-all duration-300 ${getCellClass(cell)}`}/>
+                                    {cell !== 0 ? (
+                                        <div
+                                            className={`w-full h-full rounded-full animate-drop ${getCellClass(cell)}`}/>
+                                    ) : (
+                                        <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner"/>
+                                    )}
                                 </div>
                             ))}
                         </div>
