@@ -5,6 +5,9 @@ import { useAuth } from "../context/AuthContext";
 import { MenuButton } from "../components/ui/MenuButton";
 import { useSoundEffect } from "../hooks/useSoundEffect";
 import dropSfx from "../assets/sfx/drop.ogg";
+import winSfx from "../assets/sfx/victory.mp3";
+import loseSfx from "../assets/sfx/loss.mp3";
+import drawSfx from "../assets/sfx/draw.mp3";
 
 type Cell = 0 | 1 | 2;
 
@@ -30,6 +33,7 @@ export const OnlineBoard = () => {
     const [myPlayerNum, setMyPlayerNum] = useState<number | null>(null);
     const [opponentName, setOpponentName] = useState<string>("Waiting...");
     const [winnerId, setWinnerId] = useState<number | null>(null);
+    const [winningLine, setWinningLine] = useState<[number, number][] | null>(null);
 
     // Fetch Initial State
     useEffect(() => {
@@ -41,6 +45,7 @@ export const OnlineBoard = () => {
                 setCurrentTurn(res.data.currentTurn);
                 setMyPlayerNum(res.data.myPlayerNum);
                 setWinnerId(res.data.winnerId);
+                setWinningLine(res.data.winningLine || null);
 
                 // Figure out opponent's name
                 if (res.data.myPlayerNum === 1) {
@@ -81,6 +86,7 @@ export const OnlineBoard = () => {
                 setCurrentTurn(data.currentTurn);
                 setStatus(data.status);
                 setWinnerId(data.winnerId);
+                setWinningLine(data.winningLine || null);
             }
         };
 
@@ -103,11 +109,24 @@ export const OnlineBoard = () => {
         }
     };
 
+    // NEW: Play end game sounds based on the server's status and winnerId
+    useEffect(() => {
+        if (status === 'FINISHED') {
+            if (winnerId === user?.id) {
+                playSound(winSfx);
+            } else if (winnerId !== null) {
+                playSound(loseSfx);
+            } else {
+                playSound(drawSfx);
+            }
+        }
+    }, [status, winnerId, user?.id, playSound]);
+
     if (board.length === 0) return <div className="text-white text-center mt-20">Syncing to Grid...</div>;
 
     const isMyTurn = currentTurn === myPlayerNum;
     const amIWinner = winnerId === user?.id;
-
+    
     return (
         <div className="relative flex flex-col items-center w-full h-full min-h-screen">
 
@@ -150,15 +169,32 @@ export const OnlineBoard = () => {
                 <div className={`bg-blue-600/90 p-3 md:p-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.6)] border-2 border-blue-400/50 backdrop-blur-sm transition-all ${!isMyTurn && status === 'PLAYING' ? 'opacity-70 pointer-events-none' : ''}`}>
                     {board.map((row, rowIndex) => (
                         <div key={rowIndex} className="flex">
-                            {row.map((cell, colIndex) => (
-                                <div
-                                    key={colIndex}
-                                    onClick={() => handleDrop(colIndex)}
-                                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 p-1 md:p-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                                >
-                                    <div className={`w-full h-full rounded-full transition-all duration-300 ${getCellClass(cell)}`}/>
-                                </div>
-                            ))}
+                            {row.map((cell, colIndex) => {
+                                // 👇 1. Check if this cell is part of the win
+                                const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
+
+                                // 👇 2. Dim the cell if game is over and it's NOT the winning piece
+                                const shouldDim = status === 'FINISHED' && cell !== 0 && !isWinnerCell;
+
+                                return (
+                                    <div
+                                        key={colIndex}
+                                        onClick={() => handleDrop(colIndex)}
+                                        className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 p-1 md:p-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                                    >
+                                        {cell !== 0 ? (
+                                            <div className={`
+                                                w-full h-full rounded-full transition-all duration-500
+                                                ${getCellClass(cell)}
+                                                ${isWinnerCell ? 'animate-victory' : 'animate-drop'}
+                                                ${shouldDim ? 'opacity-30 grayscale-[50%]' : ''}
+                                            `} />
+                                        ) : (
+                                            <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner" />
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     ))}
                 </div>

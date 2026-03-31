@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+/* The pulsing victory glow */
+@keyframes victoryGlow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(255, 255, 255, 1), inset 0 0 10px rgba(255,255,255,0.8);
+        transform: scale(1.15);
+        border-color: rgba(255, 255, 255, 1);
+    }
+}
+
+.animate-victory {
+    animation: victoryGlow 1.5s infinite ease-in-out;
+    border: 3px solid white;
+    z-index: 20;
+}
+
+/* The gravity drop effect */
+@keyframes dropIn {
+    0% {
+        transform: translateY(-500%);
+        opacity: 0.5;
+    }
+    60% {
+        transform: translateY(10%);
+    }
+    80% {
+        transform: translateY(-10%);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-drop {
+    animation: dropIn 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}

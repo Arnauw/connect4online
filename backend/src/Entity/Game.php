@@ -43,6 +43,9 @@ class Game
     #[ORM\Column(length: 10, nullable: true)]
     private ?string $roomCode = null;
 
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $winningLine = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -128,6 +131,18 @@ class Game
     public function setRoomCode(?string $roomCode): static
     {
         $this->roomCode = $roomCode;
+
+        return $this;
+    }
+
+    public function getWinningLine(): ?array
+    {
+        return $this->winningLine;
+    }
+
+    public function setWinningLine(?array $winningLine): static
+    {
+        $this->winningLine = $winningLine;
 
         return $this;
     }

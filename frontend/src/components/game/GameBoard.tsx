@@ -29,6 +29,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     const [currentPlayer, setCurrentPlayer] = useState<Player>(game.currentPlayer);
     const [winner, setWinner] = useState<Player | null>(game.winner);
     const [isGameOver, setIsGameOver] = useState<boolean>(game.gameOver);
+    const winningLine = game.winningLine;
     const workerRef = useRef<Worker | null>(null);
     const playSound = useSoundEffect();
 
@@ -131,25 +132,37 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
                     className="bg-blue-600/90 p-3 md:p-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.6)] border-2 border-blue-400/50 backdrop-blur-sm">
                     {board.map((row, rowIndex) => (
                         <div key={rowIndex} className="flex">
-                            {row.map((cell, colIndex) => (
-                                <div
-                                    key={colIndex}
-                                    onClick={() => {
-                                        const isHumanTurn = currentPlayer === 1;
-                                        if (!winner && (isHumanTurn || !vsBot)) {
-                                            handleDrop(colIndex as ColumnIndex);
-                                        }
-                                    }}
-                                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 p-1 md:p-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                                >
-                                    {cell !== 0 ? (
-                                        <div
-                                            className={`w-full h-full rounded-full animate-drop ${getCellClass(cell)}`}/>
-                                    ) : (
-                                        <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner"/>
-                                    )}
-                                </div>
-                            ))}
+                            {row.map((cell, colIndex) => {
+                                // 1. Determine if this specific cell is part of the win
+                                const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
+
+                                // 2. Determine if it should be dimmed (Game over, it has a piece, but it's not the winner)
+                                const shouldDim = winner && cell !== 0 && !isWinnerCell;
+
+                                return (
+                                    <div
+                                        key={colIndex}
+                                        onClick={() => {
+                                            const isHumanTurn = currentPlayer === 1;
+                                            if (!winner && (isHumanTurn || !vsBot)) {
+                                                handleDrop(colIndex as ColumnIndex);
+                                            }
+                                        }}
+                                        className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 p-1 md:p-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                                    >
+                                        {cell !== 0 ? (
+                                            <div className={`
+                                            w-full h-full rounded-full transition-all duration-500
+                                            ${getCellClass(cell)}
+                                            ${isWinnerCell ? 'animate-victory' : 'animate-drop'}
+                                            ${shouldDim ? 'opacity-30 grayscale-[50%]' : ''}
+                                        `} />
+                                        ) : (
+                                            <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner" />
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     ))}
                 </div>

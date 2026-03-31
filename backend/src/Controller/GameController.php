@@ -140,12 +140,14 @@ class GameController extends AbstractController
         $game->setBoard($board);
 
         // Check for Win or Draw
-        $isWin = $engine->checkWin($board, $row, $col, $playerNum);
+        $winningLine = $engine->checkWin($board, $row, $col, $playerNum);
+        $isWin = $winningLine !== null;
         $isDraw = !$isWin && $engine->checkDraw($board);
 
         if ($isWin) {
             $game->setStatus('FINISHED');
             $game->setWinner($user);
+            $game->setWinningLine($winningLine);
         } elseif ($isDraw) {
             $game->setStatus('FINISHED'); // Or 'DRAW' if you added that to your statuses
         } else {
@@ -165,7 +167,8 @@ class GameController extends AbstractController
                 'board' => $game->getBoard(),
                 'currentTurn' => $game->getCurrentTurn(),
                 'status' => $game->getStatus(),
-                'winnerId' => $game->getWinner()?->getId()
+                'winnerId' => $game->getWinner()?->getId(),
+                'winningLine' => $game->getWinningLine()
             ])
         );
         $hub->publish($update);

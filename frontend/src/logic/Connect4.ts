@@ -15,7 +15,6 @@ export type RowIndex = 0 | 1 | 2 | 3 | 4 | 5;
 // Row 5 [ 2,     2,     1,     2,     1,     0,     0 ]  <-- BOTTOM
 
 
-
 export class Connect4 {
     rows = 6;
     cols = 7;
@@ -24,6 +23,7 @@ export class Connect4 {
     winner: Player | null;
     gameOver: boolean;
     movesPlayed: number;
+    winningLine: [number, number][] | null;
 
     constructor() {
         this.board = this.createGrid();
@@ -31,6 +31,7 @@ export class Connect4 {
         this.winner = null;
         this.gameOver = false;
         this.movesPlayed = 0;
+        this.winningLine = null;
     };
 
     private createGrid(): Cell[][] {
@@ -85,94 +86,50 @@ export class Connect4 {
         return false;
     };
 
-    private checkHasWin(row: RowIndex, column: ColumnIndex) {
-        //      get position of last placed piece
-        //     const lastPiece: Cell = this.board[row][column];
-        const player: Player = this.currentPlayer;
-        let count: number = 1;
+    private checkHasWin(row: RowIndex, column: ColumnIndex): boolean {
+        const player = this.currentPlayer;
 
-        //      check horizontal - possibilities
-        //      Left ←
-        for (let i = 1; i < 4; i++) {
-            if (column - i < 0 || this.board[row][column - i] !== player) {
-                break;
+        // Helper function that checks a specific axis
+        const checkDirection = (rDir: number, cDir: number): boolean => {
+            // Start the line with the piece we just dropped
+            const line: [number, number][] = [[row, column]];
+
+            // 1. Look Forward
+            for (let i = 1; i < 4; i++) {
+                const r = row + (rDir * i);
+                const c = column + (cDir * i);
+                if (r >= 0 && r < this.rows && c >= 0 && c < this.cols && this.board[r][c] === player) {
+                    line.push([r, c]);
+                } else break;
             }
-            count++;
-        }
-        //      Right →
-        for (let i = 1; i < 4; i++) {
-            if (column + i >= this.cols || this.board[row][column + i] !== player) {
-                break;
+
+            // 2. Look Backward
+            for (let i = 1; i < 4; i++) {
+                const r = row - (rDir * i);
+                const c = column - (cDir * i);
+                if (r >= 0 && r < this.rows && c >= 0 && c < this.cols && this.board[r][c] === player) {
+                    line.push([r, c]);
+                } else break;
             }
-            count++;
-        }
 
-        if (count >= 4) {
-            return true;
-        }
-
-        //      check vertital - possibilities
-        count = 1;
-        //      Up ↑, actually no need to check up, it's impossible to have other pieces up.
-        //      Down ↓
-        for (let i = 1; i < 4; i++) {
-            if (row >= 3 || row + i >= this.rows || this.board[row + i][column] !== player) {
-                break;
+            // 3. Did we find 4 or more?
+            if (line.length >= 4) {
+                // Save exactly 4 coordinates for the UI to highlight
+                this.winningLine = line.slice(0, 4);
+                return true;
             }
-            count++;
-        }
 
-        if (count >= 4) {
-            return true;
-        }
+            return false;
+        };
 
-        //      check diagonals - North West ↖ (Up Left) TO South Est ↘ (Down Right) - possibilities
-        count = 1;
-        //      North West ↖ (Up Left)
-        for (let i = 1; i < 4; i++) {
-            if (column - i < 0 || row - i < 0 || this.board[row - i][column - i] !== player) {
-                break;
-            }
-            count++;
-        }
-        //      South Est ↘ (Down Right)
-        for (let i = 1; i < 4; i++) {
-            if (column + i >= this.cols || row + i >= this.rows || this.board[row + i][column + i] !== player) {
-                break;
-            }
-            count++;
-        }
-
-        if (count >= 4) {
-            return true;
-        }
-
-//      check diagonals - North Est ↗ (Up Right) TO South West ↙ (Down Left) - possibilities
-        count = 1;
-
-        //      North Est ↗ (Up Right)
-        for (let i = 1; i < 4; i++) {
-            if (column + i >= this.cols || row - i < 0 || this.board[row - i][column + i] !== player) {
-                break;
-            }
-            count++;
-        }
-        //      South West ↙ (Down Left)
-        for (let i = 1; i < 4; i++) {
-            if (column - i < 0 || row + i >= this.rows || this.board[row + i][column - i] !== player) {
-                break;
-            }
-            count++;
-        }
-
-
-        if (count >= 4) {
-            return true;
-        }
-
+        // Check all 4 possible axes
+        if (checkDirection(0, 1)) return true;  // Horizontal (-)
+        if (checkDirection(1, 0)) return true;  // Vertical (|)
+        if (checkDirection(1, 1)) return true;  // Diagonal (\)
+        if (checkDirection(1, -1)) return true; // Diagonal (/)
 
         return false;
-    };
+    }
 
     public printBoard() {
         console.table(this.board);

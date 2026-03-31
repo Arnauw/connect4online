@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../api/axios";
-import { MenuButton } from "../components/ui/MenuButton";
-import { NeonInput } from "../components/ui/NeonInput";
+import {useState, useEffect} from "react";
+import {useNavigate} from "react-router-dom";
+import {api} from "../api/axios";
+import {MenuButton} from "../components/ui/MenuButton";
+import {NeonInput} from "../components/ui/NeonInput";
 
 type MenuMode = "select" | "host" | "join";
 
@@ -13,6 +13,13 @@ export const OnlineGame = () => {
     const [joinCode, setJoinCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyCode = () => {
+        navigator.clipboard.writeText(roomCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1000);
+    };
 
     // --- HOST LOGIC: Create Game ---
     const handleHostGame = async () => {
@@ -82,10 +89,12 @@ export const OnlineGame = () => {
                 NETWORK LOBBY
             </h1>
 
-            <div className="flex flex-col gap-6 w-full max-w-md bg-slate-900/80 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.1)] text-center">
+            <div
+                className="flex flex-col gap-6 w-full max-w-md bg-slate-900/80 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.1)] text-center">
 
                 {error && (
-                    <div className="bg-red-900/30 border border-red-500/50 text-red-400 px-4 py-2 rounded text-xs font-bold shadow-[0_0_10px_red]">
+                    <div
+                        className="bg-red-900/30 border border-red-500/50 text-red-400 px-4 py-2 rounded text-xs font-bold shadow-[0_0_10px_red]">
                         ⚠️ {error}
                     </div>
                 )}
@@ -93,7 +102,8 @@ export const OnlineGame = () => {
                 {/* STATE 1: SELECT MODE */}
                 {mode === "select" && (
                     <>
-                        <p className="text-slate-400 text-sm mb-4">Establish a new connection or join an existing grid.</p>
+                        <p className="text-slate-400 text-sm mb-4">Establish a new connection or join an existing
+                            grid.</p>
                         <MenuButton onClick={handleHostGame}>
                             {loading ? "INITIALIZING..." : "HOST NEW MATCH"}
                         </MenuButton>
@@ -105,21 +115,53 @@ export const OnlineGame = () => {
 
                 {/* STATE 2: HOSTING (Waiting) */}
                 {mode === "host" && (
-                    <div className="flex flex-col items-center gap-6">
+                    <div className="flex flex-col items-center gap-6 w-full">
                         <p className="text-slate-400 text-sm">Share this uplink code with your opponent:</p>
 
-                        <div className="bg-slate-950 border-2 border-cyan-400 rounded-lg py-4 px-8 shadow-[0_0_20px_rgba(34,211,238,0.3)]">
+                        {/* CLICKABLE COPY BOX */}
+                        <div
+                            onClick={handleCopyCode}
+                            className="bg-slate-950 border-2 border-cyan-400 rounded-lg pt-6 pb-4 px-8 shadow-[0_0_20px_rgba(34,211,238,0.3)] cursor-pointer hover:bg-cyan-950/30 transition-colors group flex flex-col items-center min-w-[250px]"
+                            title="Click to copy"
+                        >
                             <span className="text-5xl font-black text-cyan-400 tracking-[0.2em] uppercase">
                                 {roomCode}
                             </span>
+
+                            {/* MOVED INSIDE THE BOX (No more absolute overlap!) */}
+                            <div className="h-4 mt-3 flex items-center justify-center">
+                                {copied ? (
+                                    <span
+                                        className="text-green-400 font-bold text-xs flex items-center gap-1 animate-bounce">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                             strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round"
+                                                  d="M4.5 12.75l6 6 9-13.5"/>
+                                        </svg>
+                                        COPIED!
+                                    </span>
+                                ) : (
+                                    <span
+                                        className="text-cyan-400 font-bold text-xs flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                             strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round"
+                                                  d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/>
+                                        </svg>
+                                        Click to copy
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-3 text-cyan-500 font-bold animate-pulse mt-4">
-                            <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+                        <div className="flex items-center gap-3 text-cyan-500 font-bold animate-pulse mt-2">
+                            <div
+                                className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"/>
                             AWAITING CONNECTION...
                         </div>
 
-                        <button onClick={() => setMode("select")} className="text-slate-500 hover:text-white text-sm underline mt-4">
+                        <button onClick={() => setMode("select")}
+                                className="text-slate-500 hover:text-white text-sm underline mt-2">
                             Cancel
                         </button>
                     </div>
@@ -144,7 +186,8 @@ export const OnlineGame = () => {
                             {loading ? "CONNECTING..." : "CONNECT"}
                         </MenuButton>
 
-                        <button type="button" onClick={() => setMode("select")} className="text-slate-500 hover:text-white text-sm underline">
+                        <button type="button" onClick={() => setMode("select")}
+                                className="text-slate-500 hover:text-white text-sm underline">
                             Cancel
                         </button>
                     </form>
