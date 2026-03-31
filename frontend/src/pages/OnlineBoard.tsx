@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { MenuButton } from "../components/ui/MenuButton";
+import { useSoundEffect } from "../hooks/useSoundEffect";
+import dropSfx from "../assets/sfx/drop.ogg";
 
 type Cell = 0 | 1 | 2;
 
@@ -21,6 +23,7 @@ export const OnlineBoard = () => {
     const { roomCode } = useParams<{ roomCode: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const playSound = useSoundEffect();
     const [board, setBoard] = useState<Cell[][]>([]);
     const [status, setStatus] = useState<string>("WAITING");
     const [currentTurn, setCurrentTurn] = useState<number>(1);
@@ -73,6 +76,7 @@ export const OnlineBoard = () => {
 
             if (data.type === 'BOARD_UPDATED') {
                 // Update everything instantly!
+                playSound(dropSfx);
                 setBoard(data.board);
                 setCurrentTurn(data.currentTurn);
                 setStatus(data.status);
@@ -83,7 +87,7 @@ export const OnlineBoard = () => {
         return () => {
             eventSource.close();
         };
-    }, [roomCode]);
+    }, [roomCode, playSound]);
 
     // Send Move to Server
     const handleDrop = async (colIndex: number) => {

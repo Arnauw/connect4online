@@ -1,6 +1,8 @@
 import {useEffect, useRef, useState} from "react";
 import {type Cell, type ColumnIndex, Connect4, type Player} from "../../logic/Connect4.ts";
 import {MenuButton} from "../ui/MenuButton.tsx";
+import { useSoundEffect } from "../../hooks/useSoundEffect";
+import dropSfx from "../../assets/sfx/drop.ogg";
 
 type GameBoardProps = {
     title?: string;
@@ -25,6 +27,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     const [winner, setWinner] = useState<Player | null>(game.winner);
     const [isGameOver, setIsGameOver] = useState<boolean>(game.gameOver);
     const workerRef = useRef<Worker | null>(null);
+    const playSound = useSoundEffect();
     
     // We must import Worker that way because it needs to use a different Thread
     // (So it's not blocked when we increase the strength of the bot later with the minimax algo)
@@ -41,6 +44,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
 
     const handleDrop = (col: ColumnIndex) => {
         if (game.dropPiece(col)) {
+            playSound(dropSfx);
             setBoard(game.board.map(row => [...row]));
             setCurrentPlayer(game.currentPlayer);
             setWinner(game.winner);
