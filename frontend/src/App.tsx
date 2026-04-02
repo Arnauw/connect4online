@@ -37,10 +37,10 @@ function App() {
                     <Route path="/register" element={<Register/>}/>
                     <Route path="/forgot-password" element={<ForgotPassword/>}/>
                     <Route path="/reset-password" element={<ResetPassword/>}/>
+                    <Route path="/settings" element={<Settings/>} />
                     <Route path="*" element={<Navigate to="/" replace />} />
 
                     <Route element={<ProtectedRoute/>}>
-                        <Route path="/settings" element={<Settings/>} />
                         <Route path="/profile" element={<Profile/>}/>
                     </Route>
                 </Route>

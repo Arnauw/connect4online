@@ -8,14 +8,18 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 class Game
 {
-////    Add this for the default board when creating new game
-////    Already handled by Controller but it's best pratice.
-//    public function __construct()
-//    {
-//        $this->board = array_fill(0, 6, array_fill(0, 7, 0));
-//        $this->status = 'WAITING';
-//        $this->currentTurn = 1;
-//    }
+//    Add this for the default board when creating new game
+//    Already handled by Controller but it's best pratice.
+    public function __construct()
+    {
+        $this->board = array_fill(0, 6, array_fill(0, 7, 0));
+        $this->status = 'WAITING';
+        $this->currentTurn = 1;
+        $this->scoreP1 = 0;
+        $this->scoreP2 = 0;
+        $this->p1WantsRematch = false;
+        $this->p2WantsRematch = false;
+    }
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -45,6 +49,18 @@ class Game
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $winningLine = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $scoreP1 = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $scoreP2 = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $p1WantsRematch = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $p2WantsRematch = null;
 
     public function getId(): ?int
     {
@@ -143,6 +159,54 @@ class Game
     public function setWinningLine(?array $winningLine): static
     {
         $this->winningLine = $winningLine;
+
+        return $this;
+    }
+
+    public function getScoreP1(): ?int
+    {
+        return $this->scoreP1;
+    }
+
+    public function setScoreP1(?int $scoreP1): static
+    {
+        $this->scoreP1 = $scoreP1;
+
+        return $this;
+    }
+
+    public function getScoreP2(): ?int
+    {
+        return $this->scoreP2;
+    }
+
+    public function setScoreP2(?int $scoreP2): static
+    {
+        $this->scoreP2 = $scoreP2;
+
+        return $this;
+    }
+
+    public function isP1WantsRematch(): ?bool
+    {
+        return $this->p1WantsRematch;
+    }
+
+    public function setP1WantsRematch(?bool $p1WantsRematch): static
+    {
+        $this->p1WantsRematch = $p1WantsRematch;
+
+        return $this;
+    }
+
+    public function isP2WantsRematch(): ?bool
+    {
+        return $this->p2WantsRematch;
+    }
+
+    public function setP2WantsRematch(?bool $p2WantsRematch): static
+    {
+        $this->p2WantsRematch = $p2WantsRematch;
 
         return $this;
     }

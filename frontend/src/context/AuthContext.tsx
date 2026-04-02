@@ -1,30 +1,35 @@
 import {createContext, useContext, useState, useEffect, type ReactNode} from "react";
 import {jwtDecode} from "jwt-decode";
 
+export interface UserSettings {
+    theme?: string;
+    music?: boolean;
+    sfx?: boolean;
+    volume?: number;
+}
+
 interface JwtPayload {
     id: number;
     username: string;
     email: string;
     elo: number;
     avatar?: string;
-    settings?: {
-        theme?: string;
-        music?: boolean;
-        sfx?: boolean;
-        volume?: number;
-    };
+    settings?: UserSettings;
     exp: number;
 }
 
 interface AuthContextType {
     user: JwtPayload | null;
     token: string | null;
+    settings: UserSettings;
     login: (token: string) => void;
     logout: () => void;
     updateUser: (newData: Partial<JwtPayload>) => void;
+    updateGuestSettings: (newSettings: UserSettings) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+const defaultSettings: UserSettings = {theme: 'dark-neon', music: true, sfx: true, volume: 50};
 
 export const AuthProvider = ({children}: { children: ReactNode }) => {
     const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
@@ -38,6 +43,16 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             return null;
         }
     });
+    const [guestSettings, setGuestSettings] = useState<UserSettings>(() => {
+        const saved = localStorage.getItem("guest_settings");
+        return saved ? JSON.parse(saved) : defaultSettings;
+    });
+    const activeSettings = user?.settings ? {...defaultSettings, ...user.settings} : guestSettings;
+
+    const updateGuestSettings = (newSettings: UserSettings) => {
+        setGuestSettings(newSettings);
+        localStorage.setItem("guest_settings", JSON.stringify(newSettings));
+    };
 
     const login = (newToken: string) => {
         localStorage.setItem("token", newToken);
@@ -52,7 +67,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
     const updateUser = (newData: Partial<JwtPayload>) => {
         if (user) {
-            setUser({ ...user, ...newData });
+            setUser({...user, ...newData});
         }
     };
 
@@ -72,7 +87,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
                 logout();
                 return;
             }
-            
+
             try {
                 const response = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
                     headers: {Authorization: `Bearer ${token}`}
@@ -92,9 +107,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         initAuth();
     }, [token]);
 
-
     return (
-        <AuthContext.Provider value={{user, token, login, logout, updateUser}}>
+        <AuthContext.Provider value={{user, token, settings: activeSettings, login, logout, updateUser, updateGuestSettings}}>
             {children}
         </AuthContext.Provider>
     );

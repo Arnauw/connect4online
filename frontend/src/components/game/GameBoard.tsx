@@ -29,6 +29,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     const [currentPlayer, setCurrentPlayer] = useState<Player>(game.currentPlayer);
     const [winner, setWinner] = useState<Player | null>(game.winner);
     const [isGameOver, setIsGameOver] = useState<boolean>(game.gameOver);
+    const [score, setScore] = useState({p1: 0, p2: 0});
     const winningLine = game.winningLine;
     const workerRef = useRef<Worker | null>(null);
     const playSound = useSoundEffect();
@@ -66,6 +67,14 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
             setCurrentPlayer(game.currentPlayer);
             setWinner(game.winner);
             setIsGameOver(game.gameOver);
+            if (game.winner) {
+                setWinner(game.winner);
+                setScore(prev => ({
+                    ...prev,
+                    p1: game.winner === 1 ? prev.p1 + 1 : prev.p1,
+                    p2: game.winner === 2 ? prev.p2 + 1 : prev.p2
+                }));
+            }
         }
     };
 
@@ -74,7 +83,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
         setGame(newGame);
         setBoard(newGame.board);
         setCurrentPlayer(newGame.currentPlayer);
-        setWinner(newGame.winner);
+        setWinner(null);
         setIsGameOver(newGame.gameOver);
     };
 
@@ -104,6 +113,21 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
                 <h2 className="text-cyan-400 font-bold tracking-widest uppercase mb-4 animate-pulse text-sm md:text-base pt-12">
                     {title}
                 </h2>
+
+                <div
+                    className="flex items-center gap-6 bg-slate-900/60 px-6 py-2 rounded-full border border-slate-700 backdrop-blur-md shadow-lg">
+                    <div className="flex flex-col items-center">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-widest">Player 1</span>
+                        <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_red]">{score.p1}</span>
+                    </div>
+                    <span className="text-slate-600 font-bold text-xl">-</span>
+                    <div className="flex flex-col items-center">
+                        <span
+                            className="text-[10px] text-slate-400 uppercase tracking-widest">{vsBot ? "Bot" : "Player 2"}</span>
+                        <span
+                            className="text-2xl font-black text-yellow-400 drop-shadow-[0_0_8px_yellow]">{score.p2}</span>
+                    </div>
+                </div>
             </div>
 
             <div className="grow flex flex-col justify-center items-center w-full pb-10">
@@ -133,10 +157,8 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
                     {board.map((row, rowIndex) => (
                         <div key={rowIndex} className="flex">
                             {row.map((cell, colIndex) => {
-                                // 1. Determine if this specific cell is part of the win
-                                const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
 
-                                // 2. Determine if it should be dimmed (Game over, it has a piece, but it's not the winner)
+                                const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
                                 const shouldDim = winner && cell !== 0 && !isWinnerCell;
 
                                 return (
@@ -156,9 +178,9 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
                                             ${getCellClass(cell)}
                                             ${isWinnerCell ? 'animate-victory' : 'animate-drop'}
                                             ${shouldDim ? 'opacity-30 grayscale-[50%]' : ''}
-                                        `} />
+                                        `}/>
                                         ) : (
-                                            <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner" />
+                                            <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner"/>
                                         )}
                                     </div>
                                 );
@@ -169,7 +191,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
 
                 <div className="w-48 mt-8">
                     <MenuButton onClick={handleReset}>
-                        Reset Game
+                        {isGameOver ? "PLAY AGAIN" : "RESTART GAME"}
                     </MenuButton>
                 </div>
 

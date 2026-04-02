@@ -30,8 +30,10 @@ class GameEngine
     public function checkWin(array $board, int $row, int $col, int $player): ?array
     {
         $directions = [
-            [0, 1],  // Horizontal[1, 0],  // Vertical
-            [1, 1],  // Diagonal \[1, -1]  // Diagonal /
+            [0, 1],  // Horizontal
+            [1, 0],  // Vertical
+            [1, 1],  // Diagonal \
+            [1, -1]  // Diagonal /
         ];
 
         foreach ($directions as [$dr, $dc]) {

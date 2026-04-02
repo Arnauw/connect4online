@@ -51,3 +51,5 @@ config/secrets/prod/prod.decrypt.private.php
 
 ### JWT KEYS ###
 *.pem
+
+ignored_folder/

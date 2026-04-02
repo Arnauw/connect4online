@@ -94,6 +94,9 @@ class GameController extends AbstractController
         ]);
     }
 
+    /**
+     * @throws \JsonException
+     */
     #[Route('/{code}/move', name: 'api_game_move', methods: ['POST'])]
     public function move(string $code, Request $request, HubInterface $hub, GameEngine $engine): JsonResponse
     {
@@ -148,10 +151,19 @@ class GameController extends AbstractController
             $game->setStatus('FINISHED');
             $game->setWinner($user);
             $game->setWinningLine($winningLine);
+            $game->setP1WantsRematch(false);
+            $game->setP2WantsRematch(false);
+
+            if ($playerNum === 1) {
+                $game->setScoreP1($game->getScoreP1() + 1);
+            } else {
+                $game->setScoreP2($game->getScoreP2() + 1);
+            }
         } elseif ($isDraw) {
-            $game->setStatus('FINISHED'); // Or 'DRAW' if you added that to your statuses
+            $game->setStatus('FINISHED');
+            $game->setP1WantsRematch(false);
+            $game->setP2WantsRematch(false);
         } else {
-            // Switch turns
             $game->setCurrentTurn($playerNum === 1 ? 2 : 1);
         }
 
@@ -168,8 +180,10 @@ class GameController extends AbstractController
                 'currentTurn' => $game->getCurrentTurn(),
                 'status' => $game->getStatus(),
                 'winnerId' => $game->getWinner()?->getId(),
-                'winningLine' => $game->getWinningLine()
-            ])
+                'winningLine' => $game->getWinningLine(),
+                'scoreP1' => $game->getScoreP1(),
+                'scoreP2' => $game->getScoreP2()
+            ], JSON_THROW_ON_ERROR)
         );
         $hub->publish($update);
 
@@ -197,7 +211,89 @@ class GameController extends AbstractController
             'myPlayerNum' => $myPlayerNum,
             'player1' => $game->getPlayer1()?->getUsername(),
             'player2' => $game->getPlayer2()?->getUsername(),
-            'winnerId' => $game->getWinner()?->getId()
+            'winnerId' => $game->getWinner()?->getId(),
+            'winningLine' => $game->getWinningLine(),
+            'scoreP1' => $game->getScoreP1(),
+            'scoreP2' => $game->getScoreP2(),
+            'p1WantsRematch' => $game->isP1WantsRematch(),
+            'p2WantsRematch' => $game->isP2WantsRematch(),
         ]);
+    }
+
+    /**
+     * @throws \JsonException
+     */
+    #[Route('/{code}/rematch', name: 'api_game_rematch', methods: ['POST'])]
+    public function requestRematch(string $code, HubInterface $hub): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $game = $this->em->getRepository(Game::class)->findOneBy(['roomCode' => strtoupper($code)]);
+
+        if (!$game || $game->getStatus() !== 'FINISHED') {
+            return $this->json(['error' => 'Game is not finished.'], 400);
+        }
+
+        $playerNum = null;
+        if ($game->getPlayer1() === $user) $playerNum = 1;
+        if ($game->getPlayer2() === $user) $playerNum = 2;
+
+        if (!$playerNum) {
+            return $this->json(['error' => 'Not a player.'], 403);
+        }
+
+        // Toggle their readiness
+        if ($playerNum === 1) $game->setP1WantsRematch(true);
+        if ($playerNum === 2) $game->setP2WantsRematch(true);
+
+        $topic = 'https://connect4.online/room/' . $game->getRoomCode();
+
+        // CHECK: Do BOTH players want a rematch?
+        if ($game->isP1WantsRematch() && $game->isP2WantsRematch()) {
+
+            // Determine who starts next (Loser starts)
+            $nextTurn = 1; // Default
+            if ($game->getWinner() === $game->getPlayer1()) {
+                $nextTurn = 2;
+            } elseif ($game->getWinner() === $game->getPlayer2()) {
+                $nextTurn = 1;
+            } else {
+                $nextTurn = $game->getCurrentTurn() === 1 ? 2 : 1;
+            }
+
+            // Reset the Board
+            $game->setBoard(array_fill(0, 6, array_fill(0, 7, 0)));
+            $game->setStatus('PLAYING');
+            $game->setWinner(null);
+            $game->setWinningLine(null);
+            $game->setP1WantsRematch(false);
+            $game->setP2WantsRematch(false);
+            $game->setCurrentTurn($nextTurn);
+
+            $this->em->flush();
+
+            // Broadcast FULL RESTART
+            $update = new Update($topic, json_encode([
+                'type' => 'GAME_RESTARTED',
+                'board' => $game->getBoard(),
+                'currentTurn' => $game->getCurrentTurn(),
+                'scoreP1' => $game->getScoreP1(),
+                'scoreP2' => $game->getScoreP2()
+            ], JSON_THROW_ON_ERROR));
+            $hub->publish($update);
+
+            return $this->json(['message' => 'Rematch starting!']);
+        }
+
+        $this->em->flush();
+
+        // ONLY ONE player clicked it so far. Broadcast the request.
+        $update = new Update($topic, json_encode([
+            'type' => 'REMATCH_REQUESTED',
+            'playerRequesting' => $playerNum
+        ], JSON_THROW_ON_ERROR));
+        $hub->publish($update);
+
+        return $this->json(['message' => 'Rematch requested.']);
     }
 }

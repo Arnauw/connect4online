@@ -3,11 +3,11 @@ import bgmFile from "../../assets/musics/Grid of Lights.mp3";
 import { useAuth } from "../../context/AuthContext.tsx";
 
 export const AudioController = () => {
-    const { user } = useAuth();
+    // const { user } = useAuth();
     const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    const musicEnabled = user?.settings?.music ?? true;
-    const volume = user?.settings?.volume ?? 50;
+    const { settings } = useAuth();
+    const musicEnabled = settings.music ?? true;
+    const volume = settings.volume ?? 50;
 
     useEffect(() => {
         const audio = audioRef.current;
