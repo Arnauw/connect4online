@@ -22,6 +22,8 @@ interface AuthContextType {
     user: JwtPayload | null;
     token: string | null;
     settings: UserSettings;
+    activeRoom: string | null;
+    setActiveRoom: (code: string | null) => void;
     login: (token: string) => void;
     logout: () => void;
     updateUser: (newData: Partial<JwtPayload>) => void;
@@ -47,7 +49,17 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         const saved = localStorage.getItem("guest_settings");
         return saved ? JSON.parse(saved) : defaultSettings;
     });
+    const [activeRoom, setActiveRoomState] = useState<string | null>(localStorage.getItem("active_room"));
     const activeSettings = user?.settings ? {...defaultSettings, ...user.settings} : guestSettings;
+
+    const setActiveRoom = (code: string | null) => {
+        if (code) {
+            localStorage.setItem("active_room", code);
+        } else {
+            localStorage.removeItem("active_room");
+        }
+        setActiveRoomState(code);
+    };
 
     const updateGuestSettings = (newSettings: UserSettings) => {
         setGuestSettings(newSettings);
@@ -61,8 +73,11 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
     const logout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("active_room");
         setToken(null);
         setUser(null);
+        setActiveRoomState(null);
     };
 
     const updateUser = (newData: Partial<JwtPayload>) => {
@@ -108,7 +123,9 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     }, [token]);
 
     return (
-        <AuthContext.Provider value={{user, token, settings: activeSettings, login, logout, updateUser, updateGuestSettings}}>
+        <AuthContext.Provider value={{
+            user, token, settings: activeSettings, login, logout, updateUser, updateGuestSettings, activeRoom, setActiveRoom, 
+        }}>
             {children}
         </AuthContext.Provider>
     );

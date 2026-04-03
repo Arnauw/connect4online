@@ -210,7 +210,9 @@ class GameController extends AbstractController
             'status' => $game->getStatus(),
             'myPlayerNum' => $myPlayerNum,
             'player1' => $game->getPlayer1()?->getUsername(),
+            'player1Avatar' => $game->getPlayer1()?->getAvatar(),
             'player2' => $game->getPlayer2()?->getUsername(),
+            'player2Avatar' => $game->getPlayer2()?->getAvatar(),
             'winnerId' => $game->getWinner()?->getId(),
             'winningLine' => $game->getWinningLine(),
             'scoreP1' => $game->getScoreP1(),
@@ -295,5 +297,67 @@ class GameController extends AbstractController
         $hub->publish($update);
 
         return $this->json(['message' => 'Rematch requested.']);
+    }
+
+    #[Route('/{code}/leave', name: 'api_game_leave', methods: ['POST'])]
+    public function leave(string $code, HubInterface $hub): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $game = $this->em->getRepository(Game::class)->findOneBy(['roomCode' => strtoupper($code)]);
+
+        if (!$game) {
+            return $this->json(['error' => 'Game not found.'], 404);
+        }
+
+        $isPlayer1 = $game->getPlayer1() === $user;
+        $isPlayer2 = $game->getPlayer2() === $user;
+
+        if (!$isPlayer1 && !$isPlayer2) {
+            return $this->json(['message' => 'Left as spectator.']);
+        }
+
+        $topic = 'https://connect4.online/room/' . $game->getRoomCode();
+
+        if ($game->getStatus() === 'WAITING') {
+            // Host leaves before anyone joins -> Cancel the room
+            $this->em->remove($game);
+            $this->em->flush();
+            return $this->json(['message' => 'Room closed.']);
+        }
+
+        if ($game->getStatus() === 'PLAYING') {
+            // Someone ragequits -> The other player wins
+            $game->setStatus('FINISHED');
+            $winner = $isPlayer1 ? $game->getPlayer2() : $game->getPlayer1();
+            $game->setWinner($winner);
+
+            // Update score for the winner
+            if ($winner === $game->getPlayer1()) {
+                $game->setScoreP1($game->getScoreP1() + 1);
+            } elseif ($winner === $game->getPlayer2()) {
+                $game->setScoreP2($game->getScoreP2() + 1);
+            }
+
+            $this->em->flush();
+
+            // Broadcast the forfeit
+            $update = new Update($topic, json_encode([
+                'type' => 'OPPONENT_LEFT',
+                'board' => $game->getBoard(),
+                'currentTurn' => $game->getCurrentTurn(),
+                'status' => $game->getStatus(),
+                'winnerId' => $winner?->getId(),
+                'scoreP1' => $game->getScoreP1(),
+                'scoreP2' => $game->getScoreP2(),
+                'message' => 'Your opponent fled the match. You win!'
+            ], JSON_THROW_ON_ERROR));
+            $hub->publish($update);
+
+            return $this->json(['message' => 'You forfeited the match.']);
+        }
+
+        // If game is already FINISHED, they are just leaving the post-game lobby
+        return $this->json(['message' => 'Left match.']);
     }
 }

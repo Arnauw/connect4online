@@ -1,9 +1,11 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
+import { Avatar } from "./Avatar";
 
 interface UserProfile {
     username: string;
     elo: number;
+    avatar?: string;
 }
 
 interface UserProfileBadgeProps {
@@ -85,16 +87,12 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
                         </span>
                     </div>
 
-                    <div
-                        onClick={() => navigate('/profile')}
-                        className="w-10 h-10 rounded-full bg-cyan-950 border-2 border-cyan-400 shadow-[0_0_10px_cyan] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                             className="w-6 h-6 text-cyan-200">
-                            <path fillRule="evenodd"
-                                  d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
-                                  clipRule="evenodd"/>
-                        </svg>
+                    {/* 3. Avatar Circle */}
+                    <div onClick={() => navigate('/profile')} className="cursor-pointer hover:scale-105 transition-transform">
+                        <Avatar
+                            avatarStr={user.avatar}
+                            className="w-10 h-10 rounded-full border-2 border-cyan-400 shadow-[0_0_10px_cyan]"
+                        />
                     </div>
                 </div>
 

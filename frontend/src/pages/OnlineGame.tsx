@@ -1,8 +1,9 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, type FormEvent} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/axios";
 import {MenuButton} from "../components/ui/MenuButton";
 import {NeonInput} from "../components/ui/NeonInput";
+import { useAuth } from "../context/AuthContext";
 
 type MenuMode = "select" | "host" | "join";
 
@@ -14,6 +15,7 @@ export const OnlineGame = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [copied, setCopied] = useState(false);
+    const { setActiveRoom } = useAuth();
 
     const handleCopyCode = () => {
         navigator.clipboard.writeText(roomCode);
@@ -29,6 +31,7 @@ export const OnlineGame = () => {
             const response = await api.post("/api/game/create");
             setRoomCode(response.data.roomCode);
             setMode("host");
+            setActiveRoom(response.data.roomCode);
         } catch (err: any) {
             setError(err.response?.data?.error || "Failed to create room.");
         } finally {
@@ -62,7 +65,7 @@ export const OnlineGame = () => {
     }, [mode, roomCode, navigate]);
 
     // --- JOIN LOGIC: Enter Code ---
-    const handleJoinGame = async (e?: React.FormEvent) => {
+    const handleJoinGame = async (e?: FormEvent) => {
         if (e) e.preventDefault();
         if (!joinCode || joinCode.length !== 4) {
             setError("Room code must be exactly 4 characters.");
@@ -73,8 +76,7 @@ export const OnlineGame = () => {
         setError("");
         try {
             await api.post(`/api/game/join/${joinCode.toUpperCase()}`);
-            // If successful, the backend just sent the Mercure ping to the host!
-            // We can just navigate directly to the game board.
+            setActiveRoom(joinCode.toUpperCase());
             navigate(`/online/${joinCode.toUpperCase()}`);
         } catch (err: any) {
             setError(err.response?.data?.error || "Failed to join room. Is the code correct?");

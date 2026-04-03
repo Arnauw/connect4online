@@ -30,7 +30,10 @@ export const Register = () => {
             const response = await api.post(`${import.meta.env.VITE_API_URL}/api/register`, formData);
             console.log("Registration Success:", response.data);
             navigate("/login", {
-                state: {successMessage: "Identity initialized. ACCESS LOCKED. Check your email inbox to activate neural link."}
+                state: {
+                    successMessage: 
+                        "Identity initialized. ACCESS LOCKED. Check your email inbox (and spam folder) to activate your neural link. Transmission may take 2-3 minutes."
+                }
             });
 
         } catch (err: any) {

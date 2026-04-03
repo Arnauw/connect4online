@@ -4,6 +4,7 @@ import {api} from "../api/axios";
 import {useAuth} from "../context/AuthContext";
 import {MenuButton} from "../components/ui/MenuButton";
 import {useSoundEffect} from "../hooks/useSoundEffect";
+import { Avatar } from "../components/ui/Avatar";
 import dropSfx from "../assets/sfx/drop.ogg";
 import winSfx from "../assets/sfx/victory.mp3";
 import loseSfx from "../assets/sfx/loss.mp3";
@@ -22,6 +23,30 @@ const getCellClass = (cell: Cell): string => {
     }
 };
 
+// // Helper to format the image URLs
+// const getAvatarUrl = (avatarFileName?: string | null) => {
+//     if (!avatarFileName || avatarFileName === 'default-avatar.jpg') return null;
+//     if (avatarFileName.startsWith('http')) return avatarFileName;
+//     if (avatarFileName.startsWith('/')) return `${import.meta.env.VITE_API_URL}${avatarFileName}`;
+//     return `${import.meta.env.VITE_API_URL}/uploads/avatars/${avatarFileName}`;
+// };
+//
+// // Reusable Avatar Component to keep JSX clean
+// const PlayerAvatar = ({ avatarStr, colorClass }: { avatarStr?: string | null, colorClass: string }) => {
+//     const url = getAvatarUrl(avatarStr);
+//     return (
+//         <div className={`w-10 h-10 rounded-full border-2 ${colorClass} flex items-center justify-center overflow-hidden bg-slate-900 shrink-0`}>
+//             {url ? (
+//                 <img src={url} alt="Player" className="w-full h-full object-cover" />
+//             ) : (
+//                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 opacity-70">
+//                     <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+//                 </svg>
+//             )}
+//         </div>
+//     );
+// };
+
 export const OnlineBoard = () => {
     const {roomCode} = useParams<{ roomCode: string }>();
     const navigate = useNavigate();
@@ -34,6 +59,8 @@ export const OnlineBoard = () => {
     const [currentTurn, setCurrentTurn] = useState<number>(1);
     const [myPlayerNum, setMyPlayerNum] = useState<number | null>(null);
     const [opponentName, setOpponentName] = useState<string>("Waiting...");
+    const [myAvatar, setMyAvatar] = useState<string | null>(null);
+    const [opponentAvatar, setOpponentAvatar] = useState<string | null>(null);
     const [winnerId, setWinnerId] = useState<number | null>(null);
     const [winningLine, setWinningLine] = useState<[number, number][] | null>(null);
 
@@ -57,8 +84,12 @@ export const OnlineBoard = () => {
 
                 if (res.data.myPlayerNum === 1) {
                     setOpponentName(res.data.player2 || "Waiting...");
+                    setMyAvatar(res.data.player1Avatar);
+                    setOpponentAvatar(res.data.player2Avatar);
                 } else {
                     setOpponentName(res.data.player1 || "Host");
+                    setMyAvatar(res.data.player2Avatar);
+                    setOpponentAvatar(res.data.player1Avatar);
                 }
             } catch (err) {
                 console.error(err);
@@ -181,20 +212,34 @@ export const OnlineBoard = () => {
                 </h1>
 
                 {/* 👇 SCOREBOARD 👇 */}
-                <div
-                    className="flex items-center gap-6 mt-4 bg-slate-900/60 px-6 py-2 rounded-full border border-slate-700 backdrop-blur-md shadow-lg">
-                    <div className="flex flex-col items-center min-w-[60px]">
-                        <span
-                            className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 1 ? "You" : opponentName}</span>
-                        <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_red]">{score.p1}</span>
+                <div className="flex items-center gap-4 md:gap-6 mt-4 bg-slate-900/60 px-4 md:px-6 py-2 rounded-full border border-slate-700 backdrop-blur-md shadow-lg">
+
+                    {/* PLAYER 1 (Red) */}
+                    <div className="flex items-center gap-3">
+                        <Avatar
+                            avatarStr={myPlayerNum === 1 ? myAvatar : opponentAvatar}
+                            className="w-10 h-10 rounded-full border-2 border-red-500 shadow-[0_0_10px_red] text-red-500"
+                        />
+                        <div className="flex flex-col items-center min-w-[50px]">
+                            <span className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 1 ? "You" : opponentName}</span>
+                            <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_red]">{score.p1}</span>
+                        </div>
                     </div>
+
                     <span className="text-slate-600 font-bold text-xl">-</span>
-                    <div className="flex flex-col items-center min-w-[60px]">
-                        <span
-                            className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 2 ? "You" : opponentName}</span>
-                        <span
-                            className="text-2xl font-black text-yellow-400 drop-shadow-[0_0_8px_yellow]">{score.p2}</span>
+
+                    {/* PLAYER 2 (Yellow) */}
+                    <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-center min-w-[50px]">
+                            <span className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 2 ? "You" : opponentName}</span>
+                            <span className="text-2xl font-black text-yellow-400 drop-shadow-[0_0_8px_yellow]">{score.p2}</span>
+                        </div>
+                        <Avatar
+                            avatarStr={myPlayerNum === 2 ? myAvatar : opponentAvatar}
+                            className="w-10 h-10 rounded-full border-2 border-yellow-400 shadow-[0_0_10px_yellow] text-yellow-400"
+                        />
                     </div>
+
                 </div>
             </div>
 
@@ -202,7 +247,7 @@ export const OnlineBoard = () => {
             <div className="flex-1 flex flex-col justify-center items-center w-full gap-6 pb-8">
 
                 {/* Turn / Status Indicator */}
-                <div className="h-8 flex items-center justify-center">
+                <div className="min-h-[4rem] flex items-center justify-center my-2">
                     {status === 'WAITING' ? (
                         <div className="text-cyan-400 animate-pulse font-bold tracking-widest">
                             AWAITING OPPONENT...
