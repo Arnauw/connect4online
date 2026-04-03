@@ -11,6 +11,8 @@ import loseSfx from "../assets/sfx/loss.mp3";
 import drawSfx from "../assets/sfx/draw.mp3";
 
 type Cell = 0 | 1 | 2;
+type PlayerScore = { p1: number; p2: number };
+type RematchStatus = { p1: boolean; p2: boolean };
 
 const getCellClass = (cell: Cell): string => {
     switch (cell) {
@@ -23,37 +25,11 @@ const getCellClass = (cell: Cell): string => {
     }
 };
 
-// // Helper to format the image URLs
-// const getAvatarUrl = (avatarFileName?: string | null) => {
-//     if (!avatarFileName || avatarFileName === 'default-avatar.jpg') return null;
-//     if (avatarFileName.startsWith('http')) return avatarFileName;
-//     if (avatarFileName.startsWith('/')) return `${import.meta.env.VITE_API_URL}${avatarFileName}`;
-//     return `${import.meta.env.VITE_API_URL}/uploads/avatars/${avatarFileName}`;
-// };
-//
-// // Reusable Avatar Component to keep JSX clean
-// const PlayerAvatar = ({ avatarStr, colorClass }: { avatarStr?: string | null, colorClass: string }) => {
-//     const url = getAvatarUrl(avatarStr);
-//     return (
-//         <div className={`w-10 h-10 rounded-full border-2 ${colorClass} flex items-center justify-center overflow-hidden bg-slate-900 shrink-0`}>
-//             {url ? (
-//                 <img src={url} alt="Player" className="w-full h-full object-cover" />
-//             ) : (
-//                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 opacity-70">
-//                     <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-//                 </svg>
-//             )}
-//         </div>
-//     );
-// };
-
 export const OnlineBoard = () => {
-    const {roomCode} = useParams<{ roomCode: string }>();
+    const { roomCode } = useParams<{ roomCode: string }>();
     const navigate = useNavigate();
-    const {user} = useAuth();
+    const { user, setActiveRoom} = useAuth();
     const playSound = useSoundEffect();
-
-    // Game State
     const [board, setBoard] = useState<Cell[][]>([]);
     const [status, setStatus] = useState<string>("WAITING");
     const [currentTurn, setCurrentTurn] = useState<number>(1);
@@ -63,10 +39,8 @@ export const OnlineBoard = () => {
     const [opponentAvatar, setOpponentAvatar] = useState<string | null>(null);
     const [winnerId, setWinnerId] = useState<number | null>(null);
     const [winningLine, setWinningLine] = useState<[number, number][] | null>(null);
-
-    // 👇 NEW: SCORES AND REMATCH STATE
-    const [score, setScore] = useState({p1: 0, p2: 0});
-    const [rematchStatus, setRematchStatus] = useState({p1: false, p2: false});
+    const [score, setScore] = useState<PlayerScore>({p1: 0, p2: 0});
+    const [rematchStatus, setRematchStatus] = useState<RematchStatus>({p1: false, p2: false});
 
     // 1. Fetch Initial State
     useEffect(() => {
@@ -149,6 +123,18 @@ export const OnlineBoard = () => {
                 setWinningLine(null);
                 setScore({p1: data.scoreP1, p2: data.scoreP2});
                 setRematchStatus({p1: false, p2: false});
+            }
+
+            if (data.type === 'OPPONENT_LEFT') {
+                playSound(winSfx);
+                setBoard(data.board);
+                setCurrentTurn(data.currentTurn);
+                setStatus('FINISHED');
+                setWinnerId(data.winnerId);
+                setScore({ p1: data.scoreP1, p2: data.scoreP2 });
+
+                // Clear active room locally so we don't get the "Rejoin" button anymore
+                setActiveRoom(null);
             }
         };
 

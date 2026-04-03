@@ -1,15 +1,22 @@
-import type { ReactNode } from "react";
-import { useSoundEffect } from "../../hooks/useSoundEffect";
+import type {ReactNode, MouseEvent} from "react";
+import {useSoundEffect} from "../../hooks/useSoundEffect";
 import clickSfx from "../../assets/sfx/click.ogg";
 
 interface MenuButtonProps {
     children: ReactNode;
-    onClick?: (e: never) => void;
+    onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
     secondary?: boolean;
     type?: "button" | "submit" | "reset";
+    className?: string;
 }
 
-export const MenuButton = ({ children, onClick, secondary = false, type = "button" }: MenuButtonProps) => {
+export const MenuButton = ({
+                               children,
+                               onClick,
+                               secondary = false,
+                               type = "button",
+                               className = ""
+                           }: MenuButtonProps) => {
     const playSound = useSoundEffect();
 
     const handleClick = (e: never) => {
@@ -31,6 +38,7 @@ export const MenuButton = ({ children, onClick, secondary = false, type = "butto
                 : "border-cyan-400 text-white shadow-[0_0_10px_rgba(34,211,238,0.5)] "
                 + "hover:bg-cyan-950/40 hover:shadow-[0_0_20px_rgba(34,211,238,0.7)]"
             }
+            ${className} 
             `}
         >
             {children}
