@@ -19,7 +19,7 @@ export const MenuButton = ({
                            }: MenuButtonProps) => {
     const playSound = useSoundEffect();
 
-    const handleClick = (e: never) => {
+    const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
         playSound(clickSfx);
         if (onClick) onClick(e);
     };
