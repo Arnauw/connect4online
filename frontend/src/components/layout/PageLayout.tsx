@@ -1,17 +1,17 @@
-import {type ReactNode, useState} from "react";
-import {useLocation, useNavigate} from "react-router-dom";
+import { type ReactNode, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import bgImg from "../../assets/imgs/background.png";
-import {UserProfileBadge} from "../ui/UserProfileBadge";
-import {useAuth} from "../../context/AuthContext";
-import {AudioController} from "../audio/AudioController";
-import {api} from "../../api/axios";
+import { UserProfileBadge } from "../ui/UserProfileBadge";
+import { useAuth } from "../../context/AuthContext";
+import { AudioController } from "../audio/AudioController";
+import { api } from "../../api/axios";
 
 type PageLayoutProps = {
     children: ReactNode;
 }
 
-export const PageLayout = ({children}: PageLayoutProps) => {
-    const {user, logout, activeRoom, setActiveRoom} = useAuth();
+export const PageLayout = ({ children }: PageLayoutProps) => {
+    const { user, logout, activeRoom, setActiveRoom, activeGameStatus} = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const isHomePage = location.pathname === "/";
@@ -19,7 +19,7 @@ export const PageLayout = ({children}: PageLayoutProps) => {
     const [showWarning, setShowWarning] = useState<boolean>(false);
 
     const handleMenuClick = () => {
-        if (isOnGameBoard && activeRoom) {
+        if (isOnGameBoard && activeRoom && activeGameStatus === 'PLAYING') {
             setShowWarning(true);
         } else {
             navigate('/');

@@ -4,7 +4,7 @@ import {api} from "../api/axios";
 import {useAuth} from "../context/AuthContext";
 import {MenuButton} from "../components/ui/MenuButton";
 import {useSoundEffect} from "../hooks/useSoundEffect";
-import { Avatar } from "../components/ui/Avatar";
+import {Avatar} from "../components/ui/Avatar";
 import dropSfx from "../assets/sfx/drop.ogg";
 import winSfx from "../assets/sfx/victory.mp3";
 import loseSfx from "../assets/sfx/loss.mp3";
@@ -26,9 +26,9 @@ const getCellClass = (cell: Cell): string => {
 };
 
 export const OnlineBoard = () => {
-    const { roomCode } = useParams<{ roomCode: string }>();
+    const {roomCode} = useParams<{ roomCode: string }>();
     const navigate = useNavigate();
-    const { user, setActiveRoom} = useAuth();
+    const {user, setActiveRoom, setActiveGameStatus} = useAuth();
     const playSound = useSoundEffect();
     const [board, setBoard] = useState<Cell[][]>([]);
     const [status, setStatus] = useState<string>("WAITING");
@@ -41,6 +41,7 @@ export const OnlineBoard = () => {
     const [winningLine, setWinningLine] = useState<[number, number][] | null>(null);
     const [score, setScore] = useState<PlayerScore>({p1: 0, p2: 0});
     const [rematchStatus, setRematchStatus] = useState<RematchStatus>({p1: false, p2: false});
+    const [showWarning, setShowWarning] = useState<boolean>(false);
 
     // 1. Fetch Initial State
     useEffect(() => {
@@ -49,6 +50,7 @@ export const OnlineBoard = () => {
                 const res = await api.get(`/api/game/${roomCode}`);
                 setBoard(res.data.board);
                 setStatus(res.data.status);
+                setActiveGameStatus(res.data.status);
                 setCurrentTurn(res.data.currentTurn);
                 setMyPlayerNum(res.data.myPlayerNum);
                 setWinnerId(res.data.winnerId);
@@ -74,6 +76,10 @@ export const OnlineBoard = () => {
         fetchGame();
     }, [roomCode, navigate]);
 
+    useEffect(() => {
+        return () => setActiveGameStatus(null);
+    }, [setActiveGameStatus]);
+
     // 2. Listen to Mercure (Real-Time Updates)
     useEffect(() => {
         if (!roomCode) return;
@@ -94,6 +100,7 @@ export const OnlineBoard = () => {
                 setBoard(data.board);
                 setCurrentTurn(data.currentTurn);
                 setStatus(data.status);
+                setActiveGameStatus(data.status);
                 setWinnerId(data.winnerId);
                 setWinningLine(data.winningLine);
 
@@ -119,6 +126,7 @@ export const OnlineBoard = () => {
                 setBoard(data.board);
                 setCurrentTurn(data.currentTurn);
                 setStatus('PLAYING');
+                setActiveGameStatus('PLAYING');
                 setWinnerId(null);
                 setWinningLine(null);
                 setScore({p1: data.scoreP1, p2: data.scoreP2});
@@ -130,8 +138,9 @@ export const OnlineBoard = () => {
                 setBoard(data.board);
                 setCurrentTurn(data.currentTurn);
                 setStatus('FINISHED');
+                setActiveGameStatus('FINISHED');
                 setWinnerId(data.winnerId);
-                setScore({ p1: data.scoreP1, p2: data.scoreP2 });
+                setScore({p1: data.scoreP1, p2: data.scoreP2});
 
                 // Clear active room locally so we don't get the "Rejoin" button anymore
                 setActiveRoom(null);
@@ -198,7 +207,8 @@ export const OnlineBoard = () => {
                 </h1>
 
                 {/* 👇 SCOREBOARD 👇 */}
-                <div className="flex items-center gap-4 md:gap-6 mt-4 bg-slate-900/60 px-4 md:px-6 py-2 rounded-full border border-slate-700 backdrop-blur-md shadow-lg">
+                <div
+                    className="flex items-center gap-4 md:gap-6 mt-4 bg-slate-900/60 px-4 md:px-6 py-2 rounded-full border border-slate-700 backdrop-blur-md shadow-lg">
 
                     {/* PLAYER 1 (Red) */}
                     <div className="flex items-center gap-3">
@@ -207,8 +217,10 @@ export const OnlineBoard = () => {
                             className="w-10 h-10 rounded-full border-2 border-red-500 shadow-[0_0_10px_red] text-red-500"
                         />
                         <div className="flex flex-col items-center min-w-[50px]">
-                            <span className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 1 ? "You" : opponentName}</span>
-                            <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_red]">{score.p1}</span>
+                            <span
+                                className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 1 ? "You" : opponentName}</span>
+                            <span
+                                className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_red]">{score.p1}</span>
                         </div>
                     </div>
 
@@ -217,8 +229,10 @@ export const OnlineBoard = () => {
                     {/* PLAYER 2 (Yellow) */}
                     <div className="flex items-center gap-3">
                         <div className="flex flex-col items-center min-w-[50px]">
-                            <span className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 2 ? "You" : opponentName}</span>
-                            <span className="text-2xl font-black text-yellow-400 drop-shadow-[0_0_8px_yellow]">{score.p2}</span>
+                            <span
+                                className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 2 ? "You" : opponentName}</span>
+                            <span
+                                className="text-2xl font-black text-yellow-400 drop-shadow-[0_0_8px_yellow]">{score.p2}</span>
                         </div>
                         <Avatar
                             avatarStr={myPlayerNum === 2 ? myAvatar : opponentAvatar}
@@ -320,13 +334,49 @@ export const OnlineBoard = () => {
                     </div>
                 ) : (
                     <div className="w-48 mt-4">
-                        <MenuButton secondary onClick={() => navigate('/')}>
+                        <MenuButton secondary onClick={() => status === 'PLAYING' ? setShowWarning(true) : navigate('/')}>
                             Leave Match
                         </MenuButton>
                     </div>
                 )}
-
             </div>
+
+            {/* 👇 LOCAL MODAL 👇 */}
+            {showWarning && (
+                <div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div
+                        className="bg-slate-900 border-2 border-red-500 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_40px_rgba(220,38,38,0.4)] text-center animate-bounce-in">
+                        <h3 className="text-xl font-bold text-red-500 mb-2">ABANDON MATCH?</h3>
+                        <p className="text-slate-300 mb-6 text-sm">
+                            Leaving the grid now will count as a forfeit. Are you sure you want to disconnect?
+                        </p>
+
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                onClick={() => setShowWarning(false)}
+                                className="px-6 py-2 rounded-full border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors font-bold text-sm"
+                            >
+                                STAY
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await api.post(`/api/game/${roomCode}/leave`);
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
+                                    setActiveRoom(null);
+                                    navigate('/');
+                                }}
+                                className="px-6 py-2 rounded-full bg-red-600 text-white hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all font-bold text-sm"
+                            >
+                                FORFEIT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -28,6 +28,8 @@ interface AuthContextType {
     logout: () => void;
     updateUser: (newData: Partial<JwtPayload>) => void;
     updateGuestSettings: (newSettings: UserSettings) => void;
+    activeGameStatus: string | null;
+    setActiveGameStatus: (status: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -50,6 +52,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         return saved ? JSON.parse(saved) : defaultSettings;
     });
     const [activeRoom, setActiveRoomState] = useState<string | null>(localStorage.getItem("active_room"));
+    const [activeGameStatus, setActiveGameStatus] = useState<string | null>(null);
     const activeSettings = user?.settings ? {...defaultSettings, ...user.settings} : guestSettings;
 
     const setActiveRoom = (code: string | null) => {
@@ -78,6 +81,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         setToken(null);
         setUser(null);
         setActiveRoomState(null);
+        setActiveGameStatus(null);
     };
 
     const updateUser = (newData: Partial<JwtPayload>) => {
@@ -124,7 +128,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
     return (
         <AuthContext.Provider value={{
-            user, token, settings: activeSettings, login, logout, updateUser, updateGuestSettings, activeRoom, setActiveRoom, 
+            user, token, settings: activeSettings, login, logout, updateUser,
+            updateGuestSettings, activeRoom, setActiveRoom, activeGameStatus, setActiveGameStatus,
         }}>
             {children}
         </AuthContext.Provider>
