@@ -40,15 +40,7 @@ export const Home = () => {
                 </MenuButton>
 
                 <MenuButton onClick={() => navigate('/online')}>
-                    Create an Online Room
-                </MenuButton>
-
-                <MenuButton onClick={() => navigate('/online')}>
-                    Join an Online Match
-                </MenuButton>
-
-                <MenuButton onClick={() => navigate('/online')}>
-                    Quick Online Match
+                    PLAY ONLINE
                 </MenuButton>
 
             </div>

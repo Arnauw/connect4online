@@ -189,6 +189,25 @@ export const OnlineBoard = () => {
         }
     };
 
+    const executeLeaveMatch = async () => {
+        try {
+            await api.post(`/api/game/${roomCode}/leave`);
+        } catch (err) {
+            console.error("Error leaving match:", err);
+        }
+        setActiveRoom(null);
+        navigate('/');
+    };
+
+    // The handler for the Menu/Leave buttons
+    const handleLeaveClick = () => {
+        if (status === 'PLAYING') {
+            setShowWarning(true); // Pop the modal
+        } else {
+            executeLeaveMatch();  // Leave instantly if game is over/waiting
+        }
+    };
+
     if (board.length === 0) return <div className="text-white text-center mt-20">Syncing to Grid...</div>;
 
     const isMyTurn = currentTurn === myPlayerNum;
@@ -199,6 +218,18 @@ export const OnlineBoard = () => {
 
     return (
         <div className="relative flex flex-col items-center w-full h-full min-h-screen">
+
+            <button
+                onClick={handleLeaveClick}
+                className="absolute top-6 left-6 p-2 text-cyan-400 hover:text-cyan-100 transition-colors flex items-center gap-2 group z-50 animate-fade-in"
+            >
+                <div className="p-2 rounded-full border border-cyan-500/30 group-hover:border-cyan-400 group-hover:bg-cyan-950/50 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                </div>
+                <span className="font-bold tracking-widest hidden sm:block text-sm">MENU</span>
+            </button>
 
             {/* Header */}
             <div className="text-center space-y-2 mt-6 z-10 w-full flex flex-col items-center">
@@ -327,14 +358,13 @@ export const OnlineBoard = () => {
                             {haveIRequestedRematch ? "AWAITING OPPONENT..." : "REMATCH"}
                         </MenuButton>
 
-                        <button onClick={() => navigate('/')}
-                                className="text-slate-500 hover:text-white text-sm underline transition-colors mt-2">
+                        <button onClick={handleLeaveClick} className="text-slate-500 hover:text-white text-sm underline transition-colors mt-2">
                             Leave Match
                         </button>
                     </div>
                 ) : (
                     <div className="w-48 mt-4">
-                        <MenuButton secondary onClick={() => status === 'PLAYING' ? setShowWarning(true) : navigate('/')}>
+                        <MenuButton secondary onClick={handleLeaveClick}>
                             Leave Match
                         </MenuButton>
                     </div>
@@ -360,15 +390,7 @@ export const OnlineBoard = () => {
                                 STAY
                             </button>
                             <button
-                                onClick={async () => {
-                                    try {
-                                        await api.post(`/api/game/${roomCode}/leave`);
-                                    } catch (e) {
-                                        console.error(e);
-                                    }
-                                    setActiveRoom(null);
-                                    navigate('/');
-                                }}
+                                onClick={executeLeaveMatch}
                                 className="px-6 py-2 rounded-full bg-red-600 text-white hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all font-bold text-sm"
                             >
                                 FORFEIT

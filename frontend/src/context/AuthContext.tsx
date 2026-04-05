@@ -1,5 +1,12 @@
 import {createContext, useContext, useState, useEffect, type ReactNode} from "react";
 import {jwtDecode} from "jwt-decode";
+import { Connect4 } from "../logic/Connect4";
+
+export interface LocalGameData {
+    game: Connect4;
+    score: { p1: number; p2: number };
+    vsBot: boolean;
+}
 
 export interface UserSettings {
     theme?: string;
@@ -30,6 +37,8 @@ interface AuthContextType {
     updateGuestSettings: (newSettings: UserSettings) => void;
     activeGameStatus: string | null;
     setActiveGameStatus: (status: string | null) => void;
+    localGameData: LocalGameData | null;
+    setLocalGameData: (data: LocalGameData | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -53,6 +62,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     });
     const [activeRoom, setActiveRoomState] = useState<string | null>(localStorage.getItem("active_room"));
     const [activeGameStatus, setActiveGameStatus] = useState<string | null>(null);
+    const[localGameData, setLocalGameData] = useState<LocalGameData | null>(null);
     const activeSettings = user?.settings ? {...defaultSettings, ...user.settings} : guestSettings;
 
     const setActiveRoom = (code: string | null) => {
@@ -82,6 +92,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         setUser(null);
         setActiveRoomState(null);
         setActiveGameStatus(null);
+        setLocalGameData(null);
     };
 
     const updateUser = (newData: Partial<JwtPayload>) => {
@@ -128,8 +139,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
     return (
         <AuthContext.Provider value={{
-            user, token, settings: activeSettings, login, logout, updateUser,
-            updateGuestSettings, activeRoom, setActiveRoom, activeGameStatus, setActiveGameStatus,
+            user, token, settings: activeSettings, login, logout, updateUser, updateGuestSettings, activeRoom,
+            setActiveRoom, activeGameStatus, setActiveGameStatus, localGameData, setLocalGameData,
         }}>
             {children}
         </AuthContext.Provider>
