@@ -1,6 +1,8 @@
-import {createContext, useContext, useState, useEffect, type ReactNode} from "react";
-import {jwtDecode} from "jwt-decode";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { jwtDecode } from "jwt-decode";
 import { Connect4 } from "../logic/Connect4";
+import { api } from "../api/axios";
+import axios from "axios";
 
 export interface LocalGameData {
     game: Connect4;
@@ -108,6 +110,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             let decoded: JwtPayload;
             try {
                 decoded = jwtDecode<JwtPayload>(token);
+                // If it's already dead on arrival, log out immediately
                 if (decoded.exp * 1000 < Date.now()) {
                     logout();
                     return;
@@ -119,23 +122,87 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             }
 
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
-                    headers: {Authorization: `Bearer ${token}`}
-                });
+                // 👇 UPGRADED TO USE AXIOS API INSTANCE 👇
+                // If the token is expired, the interceptor will catch the 401
+                // and automatically try to use the refresh token!
+                const response = await api.get('/api/me');
 
-                if (response.ok) {
-                    const userData = await response.json();
-                    setUser({...decoded, ...userData});
-                } else if (response.status === 401 || response.status === 403) {
+                // If Axios succeeds (either first try, or after interceptor refresh)
+                setUser({...decoded, ...response.data});
+
+            } catch (error: any) {
+                // If Axios fails completely (Interceptor couldn't refresh)
+                console.log("Server verification failed or session expired", error);
+                if (error.response?.status === 401 || error.response?.status === 403) {
                     logout();
                 }
-            } catch (error) {
-                console.log("Server verification failed (network error?)", error);
             }
         };
 
         initAuth();
     }, [token]);
+
+
+// ---------------------------------------------------------
+    // 2. THE BACKGROUND REFRESH TIMER
+    // Wakes up 10 seconds before expiry and forces a token refresh
+    // ---------------------------------------------------------
+    useEffect(() => {
+        if (!user?.exp) return;
+
+        const timeToExpiry = (user.exp * 1000) - Date.now();
+
+        if (timeToExpiry > 10000) {
+            const timeout = setTimeout(async () => {
+                console.log("Token expiring soon, explicitly requesting new token...");
+
+                const refreshToken = localStorage.getItem("refresh_token");
+                if (!refreshToken) {
+                    logout();
+                    return;
+                }
+
+                try {
+                    // Directly ask the backend to exchange the refresh token for a new JWT
+                    const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/token/refresh`, {
+                        refresh_token: refreshToken
+                    });
+
+                    const { token: newToken, refresh_token: newRefreshToken } = response.data;
+
+                    // Save both new tokens
+                    localStorage.setItem("token", newToken);
+                    localStorage.setItem("refresh_token", newRefreshToken);
+
+                    // Fire the event so React updates its state (which triggers Effect #1)
+                    window.dispatchEvent(new CustomEvent("auth_token_refreshed", { detail: newToken }));
+
+                } catch (err) {
+                    console.error("Silent refresh failed (refresh token expired?)", err);
+                    logout();
+                }
+
+            }, timeToExpiry - 10000);
+
+            return () => clearTimeout(timeout);
+        }
+    }, [user?.exp]); // Only depends on exp to avoid infinite loops
+
+    // 3. LISTEN TO THE INTERCEPTOR
+    // When Axios gets a new token in the background, it tells React here.
+    // ---------------------------------------------------------
+    useEffect(() => {
+        const handleTokenRefresh = (e: any) => {
+            // This updates the 'token' state, which re-triggers the initAuth (Effect #1)
+            setToken(e.detail);
+        };
+
+        window.addEventListener("auth_token_refreshed", handleTokenRefresh as EventListener);
+
+        return () => {
+            window.removeEventListener("auth_token_refreshed", handleTokenRefresh as EventListener);
+        };
+    },[]);
 
     return (
         <AuthContext.Provider value={{

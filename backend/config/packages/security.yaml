@@ -28,11 +28,18 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+        api_token_refresh:
+            pattern: ^/api/token/refresh
+            stateless: true
+            refresh_jwt:
+                check_path: /api/token/refresh
+
         # The API: Everything else under /api requires a valid JWT Token
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
+
 
             #        main:
             #            lazy: true
@@ -43,12 +50,6 @@ security:
 
             # https://symfony.com/doc/current/security/impersonating_user.html
             # switch_user: true
-
-        api_token_refresh:
-            pattern: ^/api/token/refresh
-            stateless: true
-            refresh_jwt:
-                check_path: /api/token/refresh
 
 
     # Note: Only the *first* matching rule is applied

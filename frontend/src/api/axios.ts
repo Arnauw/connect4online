@@ -45,6 +45,10 @@ api.interceptors.response.use(
                     localStorage.setItem("token", token);
                     localStorage.setItem("refresh_token", newRefreshToken);
 
+                    // 👇 CRITICAL: Tell React Context to update!
+                    window.dispatchEvent(new CustomEvent("auth_token_refreshed", { detail: token }));
+
+                    // Update the header of the original failed request
                     originalRequest.headers.Authorization = `Bearer ${token}`;
                     
                     return api(originalRequest);
