@@ -13,7 +13,8 @@
     "back": "cd backend && symfony serve --no-tls",
     "clear": "cd backend && symfony console cache:clear",
     "messenger": "cd backend && symfony console messenger:consume async -vv",
-    "installAll": "concurrently \"cd frontend && pnpm install\" \"cd backend && composer install\""
+    "installAll": "concurrently \"cd frontend && pnpm install\" \"cd backend && composer install\"",
+    "back-test": "cd backend && php bin/phpunit"
   },
   "keywords": [],
   "author": "",
