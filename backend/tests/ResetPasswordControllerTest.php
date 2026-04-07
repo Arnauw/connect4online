@@ -45,56 +45,38 @@ class ResetPasswordControllerTest extends WebTestCase
         $this->em->persist($user);
         $this->em->flush();
 
-        // Test Request reset password page
-        $this->client->request('GET', '/reset-password');
+        // Test Request reset password API
+        $this->client->request('POST', '/api/reset-password/request', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+            'email' => 'me@example.com'
+        ]));
 
         self::assertResponseIsSuccessful();
-        self::assertPageTitleContains('Reset your password');
-
-        // Submit the reset password form and test email message is queued / sent
-        $this->client->submitForm('Send password reset email', [
-            'reset_password_request_form[email]' => 'me@example.com',
-        ]);
 
         // Ensure the reset password email was sent
-        // Use either assertQueuedEmailCount() || assertEmailCount() depending on your mailer setup
-        // self::assertQueuedEmailCount(1);
         self::assertEmailCount(1);
+        $messages = $this->getMailerMessages();
+        self::assertGreaterThanOrEqual(1, count($messages));
+        $email = $messages[0];
+        
+        self::assertEmailAddressContains($email, 'from', 'no-reply@connect4online.com');
+        self::assertEmailAddressContains($email, 'to', 'me@example.com');
 
-        self::assertCount(1, $messages = $this->getMailerMessages());
+        // Extract the token from the email body
+        $emailBody = quoted_printable_decode($email->toString());
+        preg_match('/token=([^"&\s]+)/', $emailBody, $matches);
+        self::assertArrayHasKey(1, $matches, 'Reset token not found in email');
+        $token = $matches[1];
 
-        self::assertEmailAddressContains($messages[0], 'from', 'no-reply@connect4online.com');
-        self::assertEmailAddressContains($messages[0], 'to', 'me@example.com');
-        self::assertEmailTextBodyContains($messages[0], 'This link will expire in 1 hour.');
+        // Test we can set a new password via API
+        $this->client->request('POST', '/api/reset-password/reset', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+            'token' => $token,
+            'password' => 'newStrongPassword'
+        ]));
 
-        self::assertResponseRedirects('/reset-password/check-email');
+        self::assertResponseIsSuccessful();
 
-        // Test check email landing page shows correct "expires at" time
-        $crawler = $this->client->followRedirect();
-
-        self::assertPageTitleContains('Password Reset Email Sent');
-        self::assertStringContainsString('This link will expire in 1 hour', $crawler->html());
-
-        // Test the link sent in the email is valid
-        $email = $messages[0]->toString();
-        preg_match('#(/reset-password/reset/[a-zA-Z0-9]+)#', $email, $resetLink);
-
-        $this->client->request('GET', $resetLink[1]);
-
-        self::assertResponseRedirects('/reset-password/reset');
-
-        $this->client->followRedirect();
-
-        // Test we can set a new password
-        $this->client->submitForm('Reset password', [
-            'change_password_form[plainPassword][first]' => 'newStrongPassword',
-            'change_password_form[plainPassword][second]' => 'newStrongPassword',
-        ]);
-
-        self::assertResponseRedirects('/');
-
+        // Verify the password was actually changed in the database
         $user = $this->userRepository->findOneBy(['email' => 'me@example.com']);
-
         self::assertInstanceOf(User::class, $user);
 
         /** @var UserPasswordHasherInterface $passwordHasher */
