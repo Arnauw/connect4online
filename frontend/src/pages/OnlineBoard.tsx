@@ -34,6 +34,7 @@ export const OnlineBoard = () => {
     const [score, setScore] = useState<PlayerScore>({p1: 0, p2: 0});
     const [rematchStatus, setRematchStatus] = useState<RematchStatus>({p1: false, p2: false});
     const [showWarning, setShowWarning] = useState<boolean>(false);
+    const [isLeaving, setIsLeaving] = useState(false);
 
     // 1. Fetch Initial State
     useEffect(() => {
@@ -66,7 +67,7 @@ export const OnlineBoard = () => {
             }
         };
         fetchGame();
-    }, [roomCode, navigate]);
+    }, [roomCode, navigate, setActiveGameStatus]);
 
     useEffect(() => {
         return () => setActiveGameStatus(null);
@@ -140,11 +141,11 @@ export const OnlineBoard = () => {
         };
 
         return () => eventSource.close();
-    }, [roomCode, playSound]);
+    }, [roomCode, playSound, setActiveGameStatus, setActiveRoom]);
 
     // Play sounds when game ends
     useEffect(() => {
-        if (status === 'FINISHED') {
+        if (status === 'FINISHED' && !isLeaving) {
             if (winnerId === user?.id) {
                 playSound(winSfx);
             } else if (winnerId !== null) {
@@ -153,7 +154,7 @@ export const OnlineBoard = () => {
                 playSound(drawSfx);
             }
         }
-    }, [status, winnerId, user?.id, playSound]);
+    }, [status, winnerId, user?.id, playSound, isLeaving]);
 
     // 3. Send Move to Server
     const handleDrop = async (colIndex: number) => {
@@ -182,6 +183,7 @@ export const OnlineBoard = () => {
     };
 
     const executeLeaveMatch = async () => {
+        setIsLeaving(true);
         try {
             await api.post(`/api/game/${roomCode}/leave`);
         } catch (err) {
