@@ -1,31 +1,21 @@
 import {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
-import {type Cell, type ColumnIndex, Connect4, type Player} from "../../logic/Connect4.ts";
-import {MenuButton} from "../ui/MenuButton.tsx";
-import {useSoundEffect} from "../../hooks/useSoundEffect";
-import dropSfx from "../../assets/sfx/drop.ogg";
-import winSfx from "../../assets/sfx/victory.mp3";
-import loseSfx from "../../assets/sfx/loss.mp3";
-import drawSfx from "../../assets/sfx/draw.mp3";
-import {useAuth} from "../../context/AuthContext.tsx";
+import {type Cell, type ColumnIndex, Connect4, type Player} from "../logic/Connect4.ts";
+import {MenuButton} from "../components/ui/MenuButton.tsx";
+import {useSoundEffect} from "../hooks/useSoundEffect";
+import dropSfx from "../assets/sfx/drop.ogg";
+import winSfx from "../assets/sfx/victory.mp3";
+import loseSfx from "../assets/sfx/loss.mp3";
+import drawSfx from "../assets/sfx/draw.mp3";
+import {useAuth} from "../context/AuthContext.tsx";
+import {BoardUI} from "../components/game/BoardUI.tsx";
 
-type GameBoardProps = {
+type LocalBoardProps = {
     title?: string;
     vsBot?: boolean;
 };
 
-const getCellClass = (cell: Cell): string => {
-    switch (cell) {
-        case 1:
-            return "bg-red-500 shadow-[inset_0_4px_6px_rgba(0,0,0,0.4)] drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]";
-        case 2:
-            return "bg-yellow-400 shadow-[inset_0_4px_6px_rgba(0,0,0,0.4)] drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]";
-        default:
-            return "bg-slate-900/40 shadow-inner";
-    }
-};
-
-export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
+export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
     const { localGameData, setLocalGameData, setActiveGameStatus } = useAuth();
     const [game, setGame] = useState<Connect4>(() => {
         if (localGameData && localGameData.vsBot === vsBot) return localGameData.game;
@@ -62,7 +52,7 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
     // (So it's not blocked when we increase the strength of the bot later with the minimax algo)
     useEffect(() => {
         workerRef.current = new Worker(
-            new URL('../../workers/bot.worker.ts', import.meta.url),
+            new URL('../workers/bot.worker.ts', import.meta.url),
             {type: 'module'},
         );
 
@@ -189,42 +179,13 @@ export const GameBoard = ({title = "Game", vsBot}: GameBoardProps) => {
                     )}
                 </div>
 
-                <div
-                    className="bg-blue-600/90 p-3 md:p-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.6)] border-2 border-blue-400/50 backdrop-blur-sm">
-                    {board.map((row, rowIndex) => (
-                        <div key={rowIndex} className="flex">
-                            {row.map((cell, colIndex) => {
-
-                                const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
-                                const shouldDim = winner && cell !== 0 && !isWinnerCell;
-
-                                return (
-                                    <div
-                                        key={colIndex}
-                                        onClick={() => {
-                                            const isHumanTurn = currentPlayer === 1;
-                                            if (!winner && (isHumanTurn || !vsBot)) {
-                                                handleDrop(colIndex as ColumnIndex);
-                                            }
-                                        }}
-                                        className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 p-1 md:p-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                                    >
-                                        {cell !== 0 ? (
-                                            <div className={`
-                                            w-full h-full rounded-full transition-all duration-500
-                                            ${getCellClass(cell)}
-                                            ${isWinnerCell ? 'animate-victory' : 'animate-drop'}
-                                            ${shouldDim ? 'opacity-30 grayscale-[50%]' : ''}
-                                        `}/>
-                                        ) : (
-                                            <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner"/>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ))}
-                </div>
+                <BoardUI
+                    board={board}
+                    onDrop={(colIndex) => handleDrop(colIndex as ColumnIndex)}
+                    winningLine={winningLine}
+                    isGameOver={isGameOver}
+                    disabled={!!(vsBot && currentPlayer === 2)}
+                />
 
                 {/* 👇 REPLACED BOTTOM BUTTONS 👇 */}
                 {isGameOver ? (

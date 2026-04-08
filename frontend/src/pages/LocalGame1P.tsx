@@ -1,5 +1,5 @@
-import { GameBoard } from "../components/game/GameBoard";
+import { LocalBoard } from "./LocalBoard";
 
 export const LocalGame1P = () => {
-    return <GameBoard title="Player vs Bot" vsBot={true} />;
+    return <LocalBoard title="Player vs Bot" vsBot={true} />;
 };

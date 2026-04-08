@@ -10,20 +10,11 @@ import winSfx from "../assets/sfx/victory.mp3";
 import loseSfx from "../assets/sfx/loss.mp3";
 import drawSfx from "../assets/sfx/draw.mp3";
 
-type Cell = 0 | 1 | 2;
+import type { Cell } from "../logic/Connect4";
+import { BoardUI } from "../components/game/BoardUI";
+
 type PlayerScore = { p1: number; p2: number };
 type RematchStatus = { p1: boolean; p2: boolean };
-
-const getCellClass = (cell: Cell): string => {
-    switch (cell) {
-        case 1:
-            return "bg-red-500 shadow-[inset_0_4px_6px_rgba(0,0,0,0.4)] drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]";
-        case 2:
-            return "bg-yellow-400 shadow-[inset_0_4px_6px_rgba(0,0,0,0.4)] drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]";
-        default:
-            return "bg-slate-900/40 shadow-inner";
-    }
-};
 
 export const OnlineBoard = () => {
     const {roomCode} = useParams<{ roomCode: string }>();
@@ -306,36 +297,13 @@ export const OnlineBoard = () => {
                 </div>
 
                 {/* The Board */}
-                <div
-                    className={`bg-blue-600/90 p-3 md:p-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.6)] border-2 border-blue-400/50 backdrop-blur-sm transition-all ${!isMyTurn && status === 'PLAYING' ? 'opacity-70 pointer-events-none' : ''}`}>
-                    {board.map((row, rowIndex) => (
-                        <div key={rowIndex} className="flex">
-                            {row.map((cell, colIndex) => {
-                                const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
-                                const shouldDim = status === 'FINISHED' && cell !== 0 && !isWinnerCell;
-
-                                return (
-                                    <div
-                                        key={colIndex}
-                                        onClick={() => handleDrop(colIndex)}
-                                        className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 p-1 md:p-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                                    >
-                                        {cell !== 0 ? (
-                                            <div className={`
-                                                w-full h-full rounded-full transition-all duration-500
-                                                ${getCellClass(cell)}
-                                                ${isWinnerCell ? 'animate-victory' : 'animate-drop'}
-                                                ${shouldDim ? 'opacity-30 grayscale-[50%]' : ''}
-                                            `}/>
-                                        ) : (
-                                            <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner"/>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ))}
-                </div>
+                <BoardUI
+                    board={board}
+                    onDrop={handleDrop}
+                    winningLine={winningLine}
+                    isGameOver={status === 'FINISHED'}
+                    disabled={!isMyTurn && status === 'PLAYING'}
+                />
 
                 {/* 👇 ACTIONS 👇 */}
                 {status === 'FINISHED' ? (
