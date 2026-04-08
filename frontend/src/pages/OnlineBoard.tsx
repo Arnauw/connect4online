@@ -12,6 +12,7 @@ import drawSfx from "../assets/sfx/draw.mp3";
 
 import type { Cell } from "../logic/Connect4";
 import { BoardUI } from "../components/game/BoardUI";
+import { TopNavButton } from "../components/ui/TopNavButton";
 
 type PlayerScore = { p1: number; p2: number };
 type RematchStatus = { p1: boolean; p2: boolean };
@@ -210,17 +211,7 @@ export const OnlineBoard = () => {
     return (
         <div className="relative flex flex-col items-center w-full h-full min-h-screen">
 
-            <button
-                onClick={handleLeaveClick}
-                className="absolute top-6 left-6 p-2 text-cyan-400 hover:text-cyan-100 transition-colors flex items-center gap-2 group z-50 animate-fade-in"
-            >
-                <div className="p-2 rounded-full border border-cyan-500/30 group-hover:border-cyan-400 group-hover:bg-cyan-950/50 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                    </svg>
-                </div>
-                <span className="font-bold tracking-widest hidden sm:block text-sm">MENU</span>
-            </button>
+            <TopNavButton label="MENU" onClick={handleLeaveClick} />
 
             {/* Header */}
             <div className="text-center space-y-2 mt-6 z-10 w-full flex flex-col items-center">
