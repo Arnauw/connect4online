@@ -1,4 +1,5 @@
 import type {ReactNode} from "react";
+import { Link, useLocation } from "react-router-dom";
 import bgImg from "../../assets/imgs/background.png";
 import { UserProfileBadge } from "../ui/UserProfileBadge";
 import { useAuth } from "../../context/AuthContext";
@@ -10,10 +11,13 @@ type PageLayoutProps = {
 
 export const PageLayout = ({children}: PageLayoutProps) => {
     const { user, logout } = useAuth();
+    const location = useLocation();
+    
+    const isPrivacyPage = location.pathname === '/privacy';
 
     return (
         <div
-            className="min-h-screen w-full bg-slate-900 text-white overflow-hidden relative"
+            className="min-h-screen w-full bg-slate-900 text-white overflow-hidden relative flex flex-col"
             style={{
                 backgroundImage: `url(${bgImg})`,
                 backgroundSize: 'cover',
@@ -26,9 +30,17 @@ export const PageLayout = ({children}: PageLayoutProps) => {
             <UserProfileBadge user={user} onLogout={logout} />
 
             {/* The rest of the page injects here */}
-            <div className="relative z-10 w-full h-full">
+            <div className="relative z-10 w-full flex-grow">
                 {children}
             </div>
+            
+            {!isPrivacyPage && (
+                <footer className="fixed bottom-4 w-full text-center text-slate-500 text-xs z-50 pointer-events-auto">
+                    <Link to="/privacy" className="hover:text-cyan-400 transition-colors drop-shadow-md">
+                        Privacy Policy (GDPR)
+                    </Link>
+                </footer>
+            )}
         </div>
     );
 };

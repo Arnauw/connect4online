@@ -13,6 +13,7 @@ import {ResetPassword} from "./pages/ResetPassword.tsx";
 import {Settings} from "./pages/Settings.tsx";
 import {ProtectedRoute} from "./components/layout/ProtectedRoute.tsx";
 import {OnlineBoard} from "./pages/OnlineBoard.tsx";
+import {PrivacyPolicy} from "./pages/PrivacyPolicy.tsx";
 
 const LayoutWrapper = () => {
     return (
@@ -38,6 +39,7 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword/>}/>
                     <Route path="/reset-password" element={<ResetPassword/>}/>
                     <Route path="/settings" element={<Settings/>} />
+                    <Route path="/privacy" element={<PrivacyPolicy/>} />
                     <Route path="*" element={<Navigate to="/" replace />} />
 
                     <Route element={<ProtectedRoute/>}>
