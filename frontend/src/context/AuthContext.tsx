@@ -64,8 +64,31 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     });
     const [activeRoom, setActiveRoomState] = useState<string | null>(localStorage.getItem("active_room"));
     const [activeGameStatus, setActiveGameStatus] = useState<string | null>(null);
-    const[localGameData, setLocalGameData] = useState<LocalGameData | null>(null);
+    const [localGameData, setLocalGameData] = useState<LocalGameData | null>(() => {
+        const saved = localStorage.getItem("local_game_data");
+        if (!saved) return null;
+        try {
+            const parsed = JSON.parse(saved);
+            // Hydrate the Connect4 class instance
+            const game = new Connect4();
+            Object.assign(game, parsed.game);
+            return { ...parsed, game };
+        } catch (e) {
+            console.error("Failed to load local game data", e);
+            return null;
+        }
+    });
+
     const activeSettings = user?.settings ? {...defaultSettings, ...user.settings} : guestSettings;
+
+    // useEffect to not lose game state in local games.
+    useEffect(() => {
+        if (localGameData) {
+            localStorage.setItem("local_game_data", JSON.stringify(localGameData));
+        } else {
+            localStorage.removeItem("local_game_data");
+        }
+    }, [localGameData]);
 
     const setActiveRoom = (code: string | null) => {
         if (code) {

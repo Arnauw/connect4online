@@ -41,7 +41,7 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
     // Save every move to the Global Memory Backpack
     useEffect(() => {
         setLocalGameData({ game, score, vsBot: !!vsBot });
-    }, [game, score, vsBot, setLocalGameData]);
+    }, [game, board, score, vsBot, setLocalGameData]);
 
     const handleLeaveMatch = () => {
         setLocalGameData(null); // Wipe memory
