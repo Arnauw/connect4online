@@ -1,10 +1,12 @@
 import {useState, useEffect} from "react";
 import {useNavigate, Link, useLocation, useSearchParams} from "react-router-dom";
+import toast from "react-hot-toast";
 import {api} from "../api/axios";
 import {NeonInput} from "../components/ui/NeonInput";
 import {MenuButton} from "../components/ui/MenuButton";
 import {useAuth} from "../context/AuthContext";
 import {TopNavButton} from "../components/ui/TopNavButton";
+import {validateEmail} from "../utils/validation";
 
 export const Login = () => {
     const navigate = useNavigate();
@@ -19,6 +21,7 @@ export const Login = () => {
     useEffect(() => {
         if (location.state && location.state.successMessage) {
             setSuccess(location.state.successMessage);
+            toast.success(location.state.successMessage, { duration: 6000 });
             // Clear the state so it doesn't persist on refresh
             window.history.replaceState({}, document.title);
         }
@@ -26,21 +29,38 @@ export const Login = () => {
         const errorParam = searchParams.get("error");
 
         if (verified === "true") {
-            setSuccess("ACCESS GRANTED: Neural Link Verified. You may now login.");
+            const msg = "ACCESS GRANTED: Neural Link Verified. You may now login.";
+            setSuccess(msg);
+            toast.success(msg);
         }
 
         if (errorParam === "invalid_token") {
-            setError("VERIFICATION FAILED: Link expired or invalid.");
+            const msg = "VERIFICATION FAILED: Link expired or invalid.";
+            setError(msg);
+            toast.error(msg);
         }
 
         if (errorParam === "session_expired") {
-            setError("SESSION EXPIRED: Please re-authenticate.");
+            const msg = "SESSION EXPIRED: Please re-authenticate.";
+            setError(msg);
+            toast.error(msg);
         }
     }, [location, searchParams]);
 
     const handleSubmit = async () => {
         setError("");
         setSuccess("");
+
+        // Client-side validation
+        if (!validateEmail(email)) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+
+        if (!password) {
+            toast.error('Password is required');
+            return;
+        }
 
         try {
             const response = await api.post(
@@ -53,6 +73,7 @@ export const Login = () => {
             localStorage.setItem("refresh_token", response.data.refresh_token);
 
             login(response.data.token);
+            toast.success('Welcome back!');
             navigate("/");
 
         } catch (err: any) {
@@ -62,16 +83,26 @@ export const Login = () => {
                 const serverMessage = err.response.data?.message;
 
                 if (serverMessage) {
-                    setError(`ACCESS DENIED: ${serverMessage}`);
+                    const msg = `ACCESS DENIED: ${serverMessage}`;
+                    setError(msg);
+                    toast.error(msg);
                 } else if (err.response.status === 401) {
-                    setError("ACCESS DENIED: Invalid credentials.");
+                    const msg = "ACCESS DENIED: Invalid credentials.";
+                    setError(msg);
+                    toast.error(msg);
                 } else {
-                    setError(`System Error (${err.response.status}). Please retry.`);
+                    const msg = `System Error (${err.response.status}). Please retry.`;
+                    setError(msg);
+                    toast.error(msg);
                 }
             } else if (err.request) {
-                setError("CONNECTION FAILED: Server unreachable.");
+                const msg = "CONNECTION FAILED: Server unreachable.";
+                setError(msg);
+                toast.error(msg);
             } else {
-                setError("Unknown Error.");
+                const msg = "Unknown Error.";
+                setError(msg);
+                toast.error(msg);
             }
         }
     };
@@ -111,6 +142,7 @@ export const Login = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoFocus
                 />
                 <NeonInput
                     label="Password"

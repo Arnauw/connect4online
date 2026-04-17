@@ -1,9 +1,12 @@
 import { type ChangeEvent, type FormEvent, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { api } from "../api/axios";
 import { NeonInput } from "../components/ui/NeonInput";
 import { MenuButton } from "../components/ui/MenuButton";
 import { TopNavButton } from "../components/ui/TopNavButton";
+import { PasswordRequirements } from "../components/ui/PasswordRequirements";
+import { validateEmail, validateUsername, validatePassword } from "../utils/validation";
 
 interface RegisterFormData {
     email: string;
@@ -16,13 +19,34 @@ export const Register = () => {
     const [formData, setFormData] = useState<RegisterFormData>({ email: "", username: "", password: "" });
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
+    const [emailTouched, setEmailTouched] = useState(false);
+    const [usernameTouched, setUsernameTouched] = useState(false);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError(""); // Clear error on change
     };
 
     const handleSubmit = async (e?: FormEvent) => {
         if (e) e.preventDefault();
+
+        // Client-side validation
+        if (!validateEmail(formData.email)) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+
+        const usernameValidation = validateUsername(formData.username);
+        if (!usernameValidation.valid) {
+            toast.error(usernameValidation.error || 'Invalid username');
+            return;
+        }
+
+        const passwordValidation = validatePassword(formData.password);
+        if (!passwordValidation.valid) {
+            toast.error(passwordValidation.errors[0] || 'Invalid password');
+            return;
+        }
 
         setError("");
         setLoading(true);
@@ -30,9 +54,12 @@ export const Register = () => {
         try {
             const response = await api.post(`${import.meta.env.VITE_API_URL}/api/register`, formData);
             console.log("Registration Success:", response.data);
+
+            toast.success('Registration successful! Check your email to verify your account.');
+
             navigate("/login", {
                 state: {
-                    successMessage: 
+                    successMessage:
                         "Identity initialized. ACCESS LOCKED. Check your email inbox (and spam folder) to activate your neural link. Transmission may take 2-3 minutes."
                 }
             });
@@ -46,13 +73,19 @@ export const Register = () => {
 
                 if (err.response.data && err.response.data.error) {
                     setError(err.response.data.error);
+                    toast.error(err.response.data.error);
                 } else {
-                    setError(`Server Error (${err.response.status}). Check console for details.`);
+                    const errorMsg = `Server Error (${err.response.status}). Please try again.`;
+                    setError(errorMsg);
+                    toast.error(errorMsg);
                 }
             } else if (err.request) {
-                setError("No response from server. Is the backend running?");
+                const errorMsg = "No response from server. Check your connection.";
+                setError(errorMsg);
+                toast.error(errorMsg);
             } else {
                 setError(err.message);
+                toast.error(err.message);
             }
         } finally {
             setLoading(false);
@@ -72,27 +105,48 @@ export const Register = () => {
                 onSubmit={handleSubmit}
                 className="flex flex-col gap-6 w-full max-w-md bg-slate-900/50 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(168,85,247,0.15)]"
             >
-                <NeonInput
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                />
-                <NeonInput
-                    label="Username"
-                    name="username"
-                    type="text"
-                    value={formData.username}
-                    onChange={handleChange}
-                />
-                <NeonInput
-                    label="Password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                />
+                <div>
+                    <NeonInput
+                        label="Email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={() => setEmailTouched(true)}
+                        autoFocus
+                    />
+                    {emailTouched && formData.email && !validateEmail(formData.email) && (
+                        <p className="mt-1 text-xs text-red-400">Please enter a valid email address</p>
+                    )}
+                </div>
+
+                <div>
+                    <NeonInput
+                        label="Username"
+                        name="username"
+                        type="text"
+                        value={formData.username}
+                        onChange={handleChange}
+                        onBlur={() => setUsernameTouched(true)}
+                    />
+                    {usernameTouched && formData.username && !validateUsername(formData.username).valid && (
+                        <p className="mt-1 text-xs text-red-400">{validateUsername(formData.username).error}</p>
+                    )}
+                    {!usernameTouched && !formData.username && (
+                        <p className="mt-1 text-xs text-slate-400">3-20 characters, letters, numbers, hyphens, underscores only</p>
+                    )}
+                </div>
+
+                <div>
+                    <NeonInput
+                        label="Password"
+                        name="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                    />
+                    <PasswordRequirements password={formData.password} />
+                </div>
 
                 {error && (
                     <div className="text-red-500 font-bold text-center animate-pulse bg-red-950/30 p-2 rounded border border-red-500/50">

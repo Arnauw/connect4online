@@ -88,6 +88,59 @@ class UserController extends AbstractController
         ]);
     }
 
+    #[Route('/avatar', name: 'api_user_avatar_delete', methods: ['DELETE'])]
+    public function deleteAvatar(EntityManagerInterface $em): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $currentAvatar = $user->getAvatar();
+
+        // Only delete if user has a custom avatar (not the default)
+        if ($currentAvatar && $currentAvatar !== 'default-avatar.jpg') {
+            $avatarPath = $this->getParameter('kernel.project_dir') . '/public/uploads/avatars/' . $currentAvatar;
+
+            // Delete the physical file if it exists
+            if (file_exists($avatarPath)) {
+                unlink($avatarPath);
+            }
+        }
+
+        // Reset to default avatar
+        $user->setAvatar('default-avatar.jpg');
+        $user->setAvatarFile(null);
+        $em->flush();
+
+        return $this->json([
+            'message' => 'Avatar deleted successfully',
+            'avatar' => 'default-avatar.jpg'
+        ]);
+    }
+
+    #[Route('', name: 'api_user_delete', methods: ['DELETE'])]
+    public function deleteAccount(EntityManagerInterface $em): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        // Delete custom avatar file if exists
+        $currentAvatar = $user->getAvatar();
+        if ($currentAvatar && $currentAvatar !== 'default-avatar.jpg') {
+            $avatarPath = $this->getParameter('kernel.project_dir') . '/public/uploads/avatars/' . $currentAvatar;
+            if (file_exists($avatarPath)) {
+                unlink($avatarPath);
+            }
+        }
+
+        // Delete user from database (this will cascade delete related entities if configured)
+        $em->remove($user);
+        $em->flush();
+
+        return $this->json([
+            'message' => 'Account deleted successfully'
+        ]);
+    }
+
     private function optimizeImage(string $filePath): void
     {
         [$width, $height] = getimagesize($filePath);

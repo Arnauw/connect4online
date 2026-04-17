@@ -32,11 +32,11 @@ export const Home = () => {
                 )}
 
                 <MenuButton onClick={() => navigate('/local1p')}>
-                    Local 1-P vs BOT
+                    LOCAL 1-P VS BOT
                 </MenuButton>
 
                 <MenuButton onClick={() => navigate('/local2p')}>
-                    Local 2-P
+                    LOCAL 2-P
                 </MenuButton>
 
                 <MenuButton onClick={() => navigate('/online')}>

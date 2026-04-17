@@ -17,7 +17,7 @@ export const PageLayout = ({children}: PageLayoutProps) => {
 
     return (
         <div
-            className="min-h-screen w-full bg-slate-900 text-white overflow-hidden relative flex flex-col"
+            className="min-h-screen w-full bg-slate-900 text-white overflow-x-hidden relative flex flex-col"
             style={{
                 backgroundImage: `url(${bgImg})`,
                 backgroundSize: 'cover',
@@ -30,12 +30,12 @@ export const PageLayout = ({children}: PageLayoutProps) => {
             <UserProfileBadge user={user} onLogout={logout} />
 
             {/* The rest of the page injects here */}
-            <div className="relative z-10 w-full flex-grow">
+            <div className="relative z-10 w-full">
                 {children}
             </div>
-            
+
             {!isPrivacyPage && (
-                <footer className="fixed bottom-4 w-full text-center text-slate-500 text-xs z-50 pointer-events-auto">
+                <footer className="fixed bottom-4 left-4 z-50 text-slate-500 text-xs">
                     <Link to="/privacy" className="hover:text-cyan-400 transition-colors drop-shadow-md">
                         Privacy Policy (GDPR)
                     </Link>

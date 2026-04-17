@@ -62,7 +62,8 @@
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="pilot@connect4.online"
+                                    placeholder="connect4online@gmail.com"
+                                    autoFocus
                                 />
 
                                 <div className="mt-4">

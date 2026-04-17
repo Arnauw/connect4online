@@ -1,6 +1,8 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import { Avatar } from "./Avatar";
+import { useSoundEffect } from "../../hooks/useSoundEffect";
+import clickSfx from "../../assets/sfx/click.ogg";
 
 interface UserProfile {
     username: string;
@@ -15,15 +17,39 @@ interface UserProfileBadgeProps {
 
 export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
     const navigate = useNavigate();
+    const playSound = useSoundEffect();
     const [showModal, setShowModal] = useState(false);
 
     const handleLogoutClick = () => {
+        playSound(clickSfx);
         setShowModal(true);
     };
 
     const confirmLogout = () => {
+        playSound(clickSfx);
         setShowModal(false);
         onLogout();
+        navigate('/');
+    };
+
+    const handleSettingsClick = () => {
+        playSound(clickSfx);
+        navigate('/settings');
+    };
+
+    const handleProfileClick = () => {
+        playSound(clickSfx);
+        navigate('/profile');
+    };
+
+    const handleLoginClick = () => {
+        playSound(clickSfx);
+        navigate('/login');
+    };
+
+    const handleSignUpClick = () => {
+        playSound(clickSfx);
+        navigate('/register');
     };
 
     if (!user) {
@@ -31,7 +57,7 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
             <div className="absolute top-6 right-6 z-50 animate-fade-in flex items-center gap-3">
 
                 <button
-                    onClick={() => navigate('/settings')}
+                    onClick={handleSettingsClick}
                     title="Settings"
                     className="p-2 rounded-full border border-slate-600 text-slate-400 hover:text-cyan-400 hover:border-cyan-400 transition-all bg-slate-900/50 backdrop-blur-md"
                 >
@@ -44,13 +70,13 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
                 </button>
 
                 <button
-                    onClick={() => navigate('/login')}
+                    onClick={handleLoginClick}
                     className="px-5 py-2 rounded-full border border-cyan-400 text-cyan-400 font-bold text-sm hover:bg-cyan-400/10 hover:shadow-[0_0_10px_rgba(34,211,238,0.4)] transition-all backdrop-blur-md"
                 >
                     LOG IN
                 </button>
                 <button
-                    onClick={() => navigate('/register')}
+                    onClick={handleSignUpClick}
                     className="px-5 py-2 rounded-full bg-cyan-600 text-white font-bold text-sm shadow-[0_0_15px_rgba(8,145,178,0.5)] hover:bg-cyan-500 hover:scale-105 transition-all"
                 >
                     SIGN UP
@@ -88,7 +114,7 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
                     </div>
 
                     {/* 3. Avatar Circle */}
-                    <div onClick={() => navigate('/profile')} className="cursor-pointer hover:scale-105 transition-transform">
+                    <div onClick={handleProfileClick} className="cursor-pointer hover:scale-105 transition-transform">
                         <Avatar
                             avatarStr={user.avatar}
                             className="w-10 h-10 rounded-full border-2 border-cyan-400 shadow-[0_0_10px_cyan]"
@@ -97,7 +123,7 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
                 </div>
 
                 <button
-                    onClick={() => navigate('/settings')}
+                    onClick={handleSettingsClick}
                     className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-600 bg-slate-900/60 text-xs text-slate-300 hover:border-cyan-400 hover:text-cyan-400 transition-all hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}

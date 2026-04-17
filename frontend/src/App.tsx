@@ -1,5 +1,6 @@
 import './App.css'
 import {HashRouter, Navigate, Outlet, Route, Routes} from "react-router-dom";
+import {Toaster} from "react-hot-toast";
 import {Home} from "./pages/Home.tsx";
 import {LocalGame1P} from "./pages/LocalGame1P.tsx";
 import {LocalGame2P} from "./pages/LocalGame2P.tsx";
@@ -26,28 +27,55 @@ const LayoutWrapper = () => {
 function App() {
 
     return (
-        <HashRouter>
-            <Routes>
-                <Route element={<LayoutWrapper/>}>
-                    <Route path="/" element={<Home/>}/>
-                    <Route path="/local1p" element={<LocalGame1P/>}/>
-                    <Route path="/local2p" element={<LocalGame2P/>}/>
-                    <Route path="/online" element={<OnlineLobby/>}/>
-                    <Route path="/online/:roomCode" element={<OnlineBoard/>} />
-                    <Route path="/login" element={<Login/>}/>
-                    <Route path="/register" element={<Register/>}/>
-                    <Route path="/forgot-password" element={<ForgotPassword/>}/>
-                    <Route path="/reset-password" element={<ResetPassword/>}/>
-                    <Route path="/settings" element={<Settings/>} />
-                    <Route path="/privacy" element={<PrivacyPolicy/>} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+        <>
+            <Toaster
+                position="top-center"
+                toastOptions={{
+                    duration: 4000,
+                    style: {
+                        background: '#1e293b',
+                        color: '#f1f5f9',
+                        border: '1px solid #334155',
+                        borderRadius: '0.75rem',
+                        boxShadow: '0 0 20px rgba(34, 211, 238, 0.2)',
+                    },
+                    success: {
+                        iconTheme: {
+                            primary: '#22d3ee',
+                            secondary: '#1e293b',
+                        },
+                    },
+                    error: {
+                        iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#1e293b',
+                        },
+                    },
+                }}
+            />
+            <HashRouter>
+                <Routes>
+                    <Route element={<LayoutWrapper/>}>
+                        <Route path="/" element={<Home/>}/>
+                        <Route path="/local1p" element={<LocalGame1P/>}/>
+                        <Route path="/local2p" element={<LocalGame2P/>}/>
+                        <Route path="/online" element={<OnlineLobby/>}/>
+                        <Route path="/online/:roomCode" element={<OnlineBoard/>} />
+                        <Route path="/login" element={<Login/>}/>
+                        <Route path="/register" element={<Register/>}/>
+                        <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                        <Route path="/reset-password" element={<ResetPassword/>}/>
+                        <Route path="/settings" element={<Settings/>} />
+                        <Route path="/privacy" element={<PrivacyPolicy/>} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
 
-                    <Route element={<ProtectedRoute/>}>
-                        <Route path="/profile" element={<Profile/>}/>
+                        <Route element={<ProtectedRoute/>}>
+                            <Route path="/profile" element={<Profile/>}/>
+                        </Route>
                     </Route>
-                </Route>
-            </Routes>
-        </HashRouter>
+                </Routes>
+            </HashRouter>
+        </>
     );
 };
 

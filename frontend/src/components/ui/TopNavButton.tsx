@@ -1,4 +1,6 @@
 import React from "react";
+import { useSoundEffect } from "../../hooks/useSoundEffect";
+import clickSfx from "../../assets/sfx/click.ogg";
 
 type TopNavButtonProps = {
     label?: string;
@@ -7,9 +9,16 @@ type TopNavButtonProps = {
 };
 
 export const TopNavButton = ({ label = "BACK", onClick, icon }: TopNavButtonProps) => {
+    const playSound = useSoundEffect();
+
+    const handleClick = () => {
+        playSound(clickSfx);
+        onClick();
+    };
+
     return (
         <button
-            onClick={onClick}
+            onClick={handleClick}
             className="absolute top-6 left-6 p-2 text-cyan-400 hover:text-cyan-100 transition-colors flex items-center gap-2 group z-50 animate-fade-in"
         >
             <div className="p-2 rounded-full border border-cyan-500/30 group-hover:border-cyan-400 group-hover:bg-cyan-950/50 transition-all">

@@ -1,5 +1,6 @@
 import {useState, useEffect, type FormEvent} from "react";
 import {useNavigate} from "react-router-dom";
+import toast from "react-hot-toast";
 import {api} from "../api/axios";
 import {MenuButton} from "../components/ui/MenuButton";
 import {NeonInput} from "../components/ui/NeonInput";
@@ -20,8 +21,9 @@ export const OnlineLobby = () => {
 
     const handleCopyCode = () => {
         navigator.clipboard.writeText(roomCode);
+        toast.success(`Room code ${roomCode} copied to clipboard!`);
         setCopied(true);
-        setTimeout(() => setCopied(false), 1000);
+        setTimeout(() => setCopied(false), 3000);
     };
 
     // --- HOST LOGIC: Create Game ---
@@ -33,8 +35,11 @@ export const OnlineLobby = () => {
             setRoomCode(response.data.roomCode);
             setMode("host");
             setActiveRoom(response.data.roomCode);
+            toast.success(`Game room created! Code: ${response.data.roomCode}`);
         } catch (err: any) {
-            setError(err.response?.data?.error || "Failed to create room.");
+            const errorMsg = err.response?.data?.error || "Failed to create room.";
+            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -69,7 +74,9 @@ export const OnlineLobby = () => {
     const handleJoinGame = async (e?: FormEvent) => {
         if (e) e.preventDefault();
         if (!joinCode || joinCode.length !== 6) {
-            setError("Room code must be exactly 6 characters.");
+            const errorMsg = "Room code must be exactly 6 characters.";
+            setError(errorMsg);
+            toast.error(errorMsg);
             return;
         }
 
@@ -78,9 +85,12 @@ export const OnlineLobby = () => {
         try {
             await api.post(`/api/game/join/${joinCode.toUpperCase()}`);
             setActiveRoom(joinCode.toUpperCase());
+            toast.success('Joined game! Starting match...');
             navigate(`/online/${joinCode.toUpperCase()}`);
         } catch (err: any) {
-            setError(err.response?.data?.error || "Failed to join room. Is the code correct?");
+            const errorMsg = err.response?.data?.error || "Failed to join room. Is the code correct?";
+            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -185,6 +195,7 @@ export const OnlineLobby = () => {
                             onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                             placeholder="e.g. A3F7E2"
                             className="text-center text-2xl font-bold uppercase tracking-widest"
+                            autoFocus
                         />
 
                         <MenuButton type="submit">
