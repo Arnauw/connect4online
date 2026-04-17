@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {api} from "../api/axios";
 import {useAuth} from "../context/AuthContext";
@@ -20,7 +20,7 @@ type RematchStatus = { p1: boolean; p2: boolean };
 export const OnlineBoard = () => {
     const {roomCode} = useParams<{ roomCode: string }>();
     const navigate = useNavigate();
-    const {user, setActiveRoom, setActiveGameStatus} = useAuth();
+    const {user, setActiveRoom, setActiveGameStatus, settings} = useAuth();
     const playSound = useSoundEffect();
     const [board, setBoard] = useState<Cell[][]>([]);
     const [status, setStatus] = useState<string>("WAITING");
@@ -35,6 +35,8 @@ export const OnlineBoard = () => {
     const [rematchStatus, setRematchStatus] = useState<RematchStatus>({p1: false, p2: false});
     const [showWarning, setShowWarning] = useState<boolean>(false);
     const [isLeaving, setIsLeaving] = useState(false);
+    const endGameAudioRef = useRef<HTMLAudioElement | null>(null);
+    const hasPlayedEndSoundRef = useRef<boolean>(false);
 
     // 1. Fetch Initial State
     useEffect(() => {
@@ -50,6 +52,11 @@ export const OnlineBoard = () => {
                 setWinningLine(res.data.winningLine);
                 setScore({p1: res.data.scoreP1, p2: res.data.scoreP2});
                 setRematchStatus({p1: res.data.p1WantsRematch, p2: res.data.p2WantsRematch});
+
+                // If game is already finished on mount, mark sound as played to prevent replay
+                if (res.data.status === 'FINISHED') {
+                    hasPlayedEndSoundRef.current = true;
+                }
 
                 if (res.data.myPlayerNum === 1) {
                     setOpponentName(res.data.player2 || "Waiting...");
@@ -124,6 +131,9 @@ export const OnlineBoard = () => {
                 setWinningLine(null);
                 setScore({p1: data.scoreP1, p2: data.scoreP2});
                 setRematchStatus({p1: false, p2: false});
+
+                // Reset sound played flag so new game can play victory/defeat sound
+                hasPlayedEndSoundRef.current = false;
             }
 
             if (data.type === 'OPPONENT_LEFT') {
@@ -145,16 +155,40 @@ export const OnlineBoard = () => {
 
     // Play sounds when game ends
     useEffect(() => {
-        if (status === 'FINISHED' && !isLeaving) {
-            if (winnerId === user?.id) {
-                playSound(winSfx);
-            } else if (winnerId !== null) {
-                playSound(loseSfx);
-            } else {
-                playSound(drawSfx);
-            }
+        if (status !== 'FINISHED' || isLeaving || hasPlayedEndSoundRef.current) return;
+
+        // Check if SFX is enabled
+        const sfxEnabled = settings.sfx ?? true;
+        if (!sfxEnabled) return;
+
+        // Mark that we've played the sound for this game end
+        hasPlayedEndSoundRef.current = true;
+
+        // Determine which sound to play
+        let soundFile: string;
+        if (winnerId === user?.id) {
+            soundFile = winSfx;
+        } else if (winnerId !== null) {
+            soundFile = loseSfx;
+        } else {
+            soundFile = drawSfx;
         }
-    }, [status, winnerId, user?.id, playSound, isLeaving]);
+
+        // Create and store audio instance
+        const audio = new Audio(soundFile);
+        audio.volume = (settings.volume ?? 50) / 100;
+        endGameAudioRef.current = audio;
+        audio.play().catch(e => console.error("End game sound blocked:", e));
+
+        // Cleanup: stop audio when component unmounts
+        return () => {
+            if (endGameAudioRef.current) {
+                endGameAudioRef.current.pause();
+                endGameAudioRef.current.currentTime = 0;
+                endGameAudioRef.current = null;
+            }
+        };
+    }, [status, winnerId, user?.id, isLeaving, settings.sfx, settings.volume]);
 
     // 3. Send Move to Server
     const handleDrop = async (colIndex: number) => {

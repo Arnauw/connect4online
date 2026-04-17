@@ -17,7 +17,7 @@ type LocalBoardProps = {
 };
 
 export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
-    const { localGameData, setLocalGameData, setActiveGameStatus } = useAuth();
+    const { localGameData, setLocalGameData, setActiveGameStatus, settings } = useAuth();
     const [game, setGame] = useState<Connect4>(() => {
         if (localGameData && localGameData.vsBot === vsBot) return localGameData.game;
         return new Connect4();
@@ -32,11 +32,20 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
     const winningLine = game.winningLine;
     const workerRef = useRef<Worker | null>(null);
     const playSound = useSoundEffect();
+    const endGameAudioRef = useRef<HTMLAudioElement | null>(null);
+    const hasPlayedEndSoundRef = useRef<boolean>(false);
 
     // Tell the Global Layout if we are playing or finished
     useEffect(() => {
         setActiveGameStatus(isGameOver ? 'FINISHED' : 'PLAYING');
     }, [isGameOver, setActiveGameStatus]);
+
+    // On mount, if game is already over, mark sound as played to prevent replay
+    useEffect(() => {
+        if (game.gameOver) {
+            hasPlayedEndSoundRef.current = true;
+        }
+    }, []); // Empty deps - only run on mount
 
     // Save every move to the Global Memory Backpack
     useEffect(() => {
@@ -64,16 +73,40 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
 
     // UseEffect to handle end game sounds.
     useEffect(() => {
-        if (!isGameOver) return;
+        if (!isGameOver || hasPlayedEndSoundRef.current) return;
 
+        // Check if SFX is enabled
+        const sfxEnabled = settings.sfx ?? true;
+        if (!sfxEnabled) return;
+
+        // Mark that we've played the sound for this game end
+        hasPlayedEndSoundRef.current = true;
+
+        // Determine which sound to play
+        let soundFile: string;
         if (winner === 1) {
-            playSound(winSfx);
+            soundFile = winSfx;
         } else if (winner === 2) {
-            playSound(loseSfx);
+            soundFile = loseSfx;
         } else {
-            playSound(drawSfx);
+            soundFile = drawSfx;
         }
-    }, [winner, isGameOver, playSound]);
+
+        // Create and store audio instance
+        const audio = new Audio(soundFile);
+        audio.volume = (settings.volume ?? 50) / 100;
+        endGameAudioRef.current = audio;
+        audio.play().catch(e => console.error("End game sound blocked:", e));
+
+        // Cleanup: stop audio when component unmounts
+        return () => {
+            if (endGameAudioRef.current) {
+                endGameAudioRef.current.pause();
+                endGameAudioRef.current.currentTime = 0;
+                endGameAudioRef.current = null;
+            }
+        };
+    }, [winner, isGameOver, settings.sfx, settings.volume]);
 
     const handleDrop = (col: ColumnIndex) => {
         if (game.dropPiece(col)) {
@@ -100,6 +133,9 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
         setCurrentPlayer(newGame.currentPlayer);
         setWinner(null);
         setIsGameOver(newGame.gameOver);
+
+        // Reset sound played flag so new game can play victory/defeat sound
+        hasPlayedEndSoundRef.current = false;
     };
 
     useEffect(() => {
