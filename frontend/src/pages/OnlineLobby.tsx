@@ -68,8 +68,8 @@ export const OnlineLobby = () => {
     // --- JOIN LOGIC: Enter Code ---
     const handleJoinGame = async (e?: FormEvent) => {
         if (e) e.preventDefault();
-        if (!joinCode || joinCode.length !== 4) {
-            setError("Room code must be exactly 4 characters.");
+        if (!joinCode || joinCode.length !== 6) {
+            setError("Room code must be exactly 6 characters.");
             return;
         }
 
@@ -175,15 +175,15 @@ export const OnlineLobby = () => {
                 {/* STATE 3: JOINING */}
                 {mode === "join" && (
                     <form onSubmit={handleJoinGame} className="flex flex-col items-center gap-6 w-full">
-                        <p className="text-slate-400 text-sm">Enter the 4-digit uplink code.</p>
+                        <p className="text-slate-400 text-sm">Enter the 6-digit uplink code.</p>
 
                         <NeonInput
                             label="Room Code"
                             type="text"
-                            maxLength={4}
+                            maxLength={6}
                             value={joinCode}
                             onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                            placeholder="e.g. X9L2"
+                            placeholder="e.g. A3F7E2"
                             className="text-center text-2xl font-bold uppercase tracking-widest"
                         />
 

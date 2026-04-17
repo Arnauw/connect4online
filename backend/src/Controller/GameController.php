@@ -34,7 +34,8 @@ class GameController extends AbstractController
         $emptyBoard = array_fill(0, 6, array_fill(0, 7, 0));
         $game->setBoard($emptyBoard);
 
-        $code = strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
+        // Generate a 6-character hex code for better security (16.7M combinations vs 65K)
+        $code = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
         $game->setRoomCode($code);
 
         $this->em->persist($game);
@@ -131,6 +132,10 @@ class GameController extends AbstractController
             return $this->json(['error' => 'Column missing.'], 400);
         }
 
+        if (!is_int($col) || $col < 0 || $col >= 7) {
+            return $this->json(['error' => 'Invalid column (0-6 required)'], 400);
+        }
+
         // Apply the Move using the Engine
         $board = $game->getBoard();
         $row = $engine->dropPiece($board, $col, $playerNum);
@@ -203,6 +208,11 @@ class GameController extends AbstractController
         $myPlayerNum = null;
         if ($game->getPlayer1() === $user) $myPlayerNum = 1;
         if ($game->getPlayer2() === $user) $myPlayerNum = 2;
+
+        // Prevent spectating: only actual players can view the game
+        if ($myPlayerNum === null) {
+            return $this->json(['error' => 'You are not a player in this game.'], 403);
+        }
 
         return $this->json([
             'board' => $game->getBoard(),

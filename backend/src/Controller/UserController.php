@@ -44,7 +44,11 @@ class UserController extends AbstractController
 
         $currentSettings = $user->getSettings() ?? [];
 
-        $newSettings = array_merge($currentSettings, $data);
+        // Whitelist allowed settings keys to prevent database pollution
+        $allowedKeys = ['theme', 'music', 'sfx', 'volume'];
+        $filteredData = array_intersect_key($data, array_flip($allowedKeys));
+
+        $newSettings = array_merge($currentSettings, $filteredData);
 
         $user->setSettings($newSettings);
 

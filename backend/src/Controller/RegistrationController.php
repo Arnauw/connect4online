@@ -46,6 +46,23 @@ class RegistrationController extends AbstractController
             return $this->json(['error' => 'Missing fields'], 400);
         }
 
+        // Password strength validation
+        if (strlen($password) < 8) {
+            return $this->json(['error' => 'Password must be at least 8 characters long'], 400);
+        }
+
+        if (!preg_match('/[A-Z]/', $password)) {
+            return $this->json(['error' => 'Password must contain at least one uppercase letter'], 400);
+        }
+
+        if (!preg_match('/[a-z]/', $password)) {
+            return $this->json(['error' => 'Password must contain at least one lowercase letter'], 400);
+        }
+
+        if (!preg_match('/[0-9]/', $password)) {
+            return $this->json(['error' => 'Password must contain at least one number'], 400);
+        }
+
         $userExists = $em->getRepository(User::class)->findOneBy(['email' => $email]);
         if ($userExists) {
             return $this->json(['error' => 'Email already exists'], 409);
