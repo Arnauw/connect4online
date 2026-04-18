@@ -1,3 +1,29 @@
+/**
+ * OnlineLobby Page
+ *
+ * Entry point for online multiplayer — lets players host or join a game.
+ *
+ * UI states (MenuMode):
+ * - "select": Initial screen with "Host New Match" and "Join via Code" buttons
+ * - "host":   Waiting screen showing the room code + spinner, listening for opponent via Mercure
+ * - "join":   Text input screen where opponent types the 6-digit room code
+ *
+ * Host flow:
+ * 1. POST /api/game/create → backend returns a 6-char room code
+ * 2. A Mercure SSE subscription is opened on that room's topic
+ * 3. When opponent joins, backend publishes GAME_STARTED → host navigates to /online/:code
+ *
+ * Host cleanup (important edge case):
+ * - If the host navigates away before a game starts, we cancel the room via /api/game/:code/leave
+ * - `gameStartedRef` prevents this cleanup from firing when the host navigates to the game
+ *   (i.e., the component unmounts because navigation happened AFTER GAME_STARTED, not before)
+ *
+ * Join flow:
+ * 1. User enters 6-char code and submits
+ * 2. POST /api/game/join/:code → backend assigns them as Player 2 + broadcasts GAME_STARTED
+ * 3. Joiner navigates to /online/:code
+ */
+
 import {useState, useEffect, useRef, type FormEvent} from "react";
 import {useNavigate} from "react-router-dom";
 import toast from "react-hot-toast";
@@ -18,6 +44,10 @@ export const OnlineLobby = () => {
     const [error, setError] = useState("");
     const [copied, setCopied] = useState(false);
     const { activeRoom, setActiveRoom } = useAuth();
+
+    // Tracks whether the game started legitimately (opponent joined).
+    // Without this, navigating to /online/:code on GAME_STARTED would trigger
+    // the cleanup effect and call /leave on the newly-started game.
     const gameStartedRef = useRef(false);
 
     const handleCopyCode = () => {
@@ -27,9 +57,8 @@ export const OnlineLobby = () => {
         setTimeout(() => setCopied(false), 3000);
     };
 
-    // --- HOST LOGIC: Create Game ---
+    /** Create a new game room on the backend and enter host waiting mode */
     const handleHostGame = async () => {
-        // Prevent hosting if already have an active room
         if (activeRoom) {
             toast.error("You already have an active room! Leave it first.");
             return;
@@ -37,12 +66,13 @@ export const OnlineLobby = () => {
 
         setLoading(true);
         setError("");
-        gameStartedRef.current = false; // Reset flag when creating new room
+        gameStartedRef.current = false;
+
         try {
             const response = await api.post("/api/game/create");
             setRoomCode(response.data.roomCode);
             setMode("host");
-            setActiveRoom(response.data.roomCode);
+            setActiveRoom(response.data.roomCode);  // Persist so Home page shows "Rejoin" button
             toast.success(`Game room created! Code: ${response.data.roomCode}`);
         } catch (err: any) {
             const errorMsg = err.response?.data?.error || "Failed to create room.";
@@ -53,7 +83,7 @@ export const OnlineLobby = () => {
         }
     };
 
-    // --- HOST LOGIC: Cancel/Leave Room ---
+    /** Cancel the hosted room: call /leave on backend, clear local state */
     const handleCancelHost = async () => {
         if (!roomCode) return;
 
@@ -62,23 +92,22 @@ export const OnlineLobby = () => {
             setActiveRoom(null);
             setRoomCode("");
             setMode("select");
-            gameStartedRef.current = false; // Reset flag
+            gameStartedRef.current = false;
             toast.success("Room cancelled");
         } catch (err: any) {
             console.error("Failed to cancel room:", err);
-            // Still clean up locally even if backend fails
+            // Still clean up locally even if backend call fails
             setActiveRoom(null);
             setRoomCode("");
             setMode("select");
-            gameStartedRef.current = false; // Reset flag
+            gameStartedRef.current = false;
         }
     };
 
-    // --- HOST LOGIC: Listen for Opponent ---
+    /** Listen via Mercure SSE for when an opponent joins the hosted room */
     useEffect(() => {
         if (mode !== "host" || !roomCode) return;
 
-        // Connect to Mercure
         const mercureUrl = new URL(`${import.meta.env.VITE_MERCURE_URL}/.well-known/mercure`);
         mercureUrl.searchParams.append('topic', `https://connect4.online/room/${roomCode}`);
 
@@ -87,24 +116,21 @@ export const OnlineLobby = () => {
         eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'GAME_STARTED') {
-                // Opponent joined! Navigate to the game board.
+                // Mark that navigation is happening due to game start, not user leaving
                 gameStartedRef.current = true;
                 eventSource.close();
                 navigate(`/online/${roomCode}`);
             }
         };
 
-        // Cleanup connection when leaving the page
-        return () => {
-            eventSource.close();
-        };
+        return () => eventSource.close();
     }, [mode, roomCode, navigate]);
 
-    // --- CLEANUP: Cancel room if user navigates away while hosting ---
+    // Cleanup: if user navigates away while still hosting (before any opponent joined),
+    // cancel the room on the backend so it doesn't sit in WAITING state forever.
+    // gameStartedRef guards against false-firing when navigating TO the game.
     useEffect(() => {
         return () => {
-            // Only cleanup if user navigates away while hosting AND the game hasn't started
-            // Don't cleanup if game started (opponent joined) - that's a legitimate navigation
             if (mode === "host" && roomCode && !gameStartedRef.current) {
                 api.post(`/api/game/${roomCode}/leave`).catch(err =>
                     console.error("Failed to cleanup room on unmount:", err)
@@ -114,9 +140,10 @@ export const OnlineLobby = () => {
         };
     }, [mode, roomCode, setActiveRoom]);
 
-    // --- JOIN LOGIC: Enter Code ---
+    /** Submit the join form: validate code, call /api/game/join/:code, navigate to board */
     const handleJoinGame = async (e?: FormEvent) => {
         if (e) e.preventDefault();
+
         if (!joinCode || joinCode.length !== 6) {
             const errorMsg = "Room code must be exactly 6 characters.";
             setError(errorMsg);
@@ -126,6 +153,7 @@ export const OnlineLobby = () => {
 
         setLoading(true);
         setError("");
+
         try {
             await api.post(`/api/game/join/${joinCode.toUpperCase()}`);
             setActiveRoom(joinCode.toUpperCase());
@@ -148,21 +176,18 @@ export const OnlineLobby = () => {
                 NETWORK LOBBY
             </h1>
 
-            <div
-                className="flex flex-col gap-6 w-full max-w-md bg-slate-900/80 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.1)] text-center">
+            <div className="flex flex-col gap-6 w-full max-w-md bg-slate-900/80 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.1)] text-center">
 
                 {error && (
-                    <div
-                        className="bg-red-900/30 border border-red-500/50 text-red-400 px-4 py-2 rounded text-xs font-bold shadow-[0_0_10px_red]">
+                    <div className="bg-red-900/30 border border-red-500/50 text-red-400 px-4 py-2 rounded text-xs font-bold shadow-[0_0_10px_red]">
                         ⚠️ {error}
                     </div>
                 )}
 
-                {/* STATE 1: SELECT MODE */}
+                {/* STATE 1: Initial selection */}
                 {mode === "select" && (
                     <>
-                        <p className="text-slate-400 text-sm mb-4">Establish a new connection or join an existing
-                            grid.</p>
+                        <p className="text-slate-400 text-sm mb-4">Establish a new connection or join an existing grid.</p>
                         <MenuButton onClick={handleHostGame} disabled={!!activeRoom}>
                             {loading ? "INITIALIZING..." : activeRoom ? "ALREADY HOSTING" : "HOST NEW MATCH"}
                         </MenuButton>
@@ -172,12 +197,12 @@ export const OnlineLobby = () => {
                     </>
                 )}
 
-                {/* STATE 2: HOSTING (Waiting) */}
+                {/* STATE 2: Host waiting for opponent — shows room code + Mercure listening */}
                 {mode === "host" && (
                     <div className="flex flex-col items-center gap-6 w-full">
                         <p className="text-slate-400 text-sm">Share this uplink code with your opponent:</p>
 
-                        {/* CLICKABLE COPY BOX */}
+                        {/* Clickable room code box — copies to clipboard on click */}
                         <div
                             onClick={handleCopyCode}
                             className="bg-slate-950 border-2 border-cyan-400 rounded-lg pt-6 pb-4 px-8 shadow-[0_0_20px_rgba(34,211,238,0.3)] cursor-pointer hover:bg-cyan-950/30 transition-colors group flex flex-col items-center min-w-[250px]"
@@ -186,26 +211,18 @@ export const OnlineLobby = () => {
                             <span className="text-5xl font-black text-cyan-400 tracking-[0.2em] uppercase">
                                 {roomCode}
                             </span>
-
-                            {/* MOVED INSIDE THE BOX (No more absolute overlap!) */}
                             <div className="h-4 mt-3 flex items-center justify-center">
                                 {copied ? (
-                                    <span
-                                        className="text-green-400 font-bold text-xs flex items-center gap-1 animate-bounce">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                             strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                                            <path strokeLinecap="round" strokeLinejoin="round"
-                                                  d="M4.5 12.75l6 6 9-13.5"/>
+                                    <span className="text-green-400 font-bold text-xs flex items-center gap-1 animate-bounce">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
                                         </svg>
                                         COPIED!
                                     </span>
                                 ) : (
-                                    <span
-                                        className="text-cyan-400 font-bold text-xs flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                             strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                            <path strokeLinecap="round" strokeLinejoin="round"
-                                                  d="M16.5 8.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v8.25A2.25 2.25 0 0 0 6 16.5h2.25m8.25-8.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-7.5A2.25 2.25 0 0 1 8.25 18v-1.5m8.25-8.25h-6a2.25 2.25 0 0 0-2.25 2.25v6"/>
+                                    <span className="text-cyan-400 font-bold text-xs flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v8.25A2.25 2.25 0 0 0 6 16.5h2.25m8.25-8.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-7.5A2.25 2.25 0 0 1 8.25 18v-1.5m8.25-8.25h-6a2.25 2.25 0 0 0-2.25 2.25v6"/>
                                         </svg>
                                         Click to copy
                                     </span>
@@ -214,19 +231,17 @@ export const OnlineLobby = () => {
                         </div>
 
                         <div className="flex items-center gap-3 text-cyan-500 font-bold animate-pulse mt-2">
-                            <div
-                                className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"/>
+                            <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"/>
                             AWAITING CONNECTION...
                         </div>
 
-                        <button onClick={handleCancelHost}
-                                className="text-slate-500 hover:text-white text-sm underline mt-2">
+                        <button onClick={handleCancelHost} className="text-slate-500 hover:text-white text-sm underline mt-2">
                             Cancel
                         </button>
                     </div>
                 )}
 
-                {/* STATE 3: JOINING */}
+                {/* STATE 3: Join via code input */}
                 {mode === "join" && (
                     <form onSubmit={handleJoinGame} className="flex flex-col items-center gap-6 w-full">
                         <p className="text-slate-400 text-sm">Enter the 6-digit uplink code.</p>
@@ -246,8 +261,7 @@ export const OnlineLobby = () => {
                             {loading ? "CONNECTING..." : "CONNECT"}
                         </MenuButton>
 
-                        <button type="button" onClick={() => setMode("select")}
-                                className="text-slate-500 hover:text-white text-sm underline">
+                        <button type="button" onClick={() => setMode("select")} className="text-slate-500 hover:text-white text-sm underline">
                             Cancel
                         </button>
                     </form>

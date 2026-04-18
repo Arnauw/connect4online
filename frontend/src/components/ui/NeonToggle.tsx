@@ -1,3 +1,15 @@
+/**
+ * NeonToggle Component
+ *
+ * A styled on/off toggle switch with a glowing cyan indicator.
+ * Used in Settings for Music and SFX switches.
+ *
+ * Props:
+ * - label:    Text label displayed to the left of the toggle
+ * - checked:  Current toggle state (true = on)
+ * - onChange: Called with the new boolean value when toggled
+ */
+
 interface NeonToggleProps {
     label: string;
     checked: boolean;
@@ -16,6 +28,7 @@ export const NeonToggle = ({ label, checked, onChange }: NeonToggleProps) => {
                     ${checked ? "bg-cyan-900/80 border-2 border-cyan-400" : "bg-slate-800 border-2 border-slate-600"}
                 `}
             >
+                {/* Sliding indicator pill — moves right when checked */}
                 <div
                     className={`
                         absolute top-1 left-1 w-4 h-4 rounded-full shadow-md transition-all duration-300

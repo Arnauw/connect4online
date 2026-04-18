@@ -1,3 +1,13 @@
+/**
+ * PrivacyPolicy Page
+ *
+ * Static GDPR-compliant privacy policy page.
+ * Covers: data collected, legal basis, retention, user rights, cookies, third parties.
+ *
+ * The footer link to this page is hidden when you're already on this page
+ * (handled by the isPrivacyPage check in PageLayout).
+ */
+
 import { useNavigate } from "react-router-dom";
 import { TopNavButton } from "../components/ui/TopNavButton";
 
@@ -13,7 +23,7 @@ export const PrivacyPolicy = () => {
             </h1>
 
             <div className="w-full max-w-4xl bg-slate-900/80 p-6 md:p-10 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.1)] text-slate-300 space-y-6 text-sm md:text-base leading-relaxed">
-                
+
                 <section>
                     <h2 className="text-xl font-bold text-cyan-400 mb-2">1. Introduction</h2>
                     <p>
@@ -90,7 +100,7 @@ export const PrivacyPolicy = () => {
                         Connect4Online has the discretion to update this privacy policy at any time. When we do, we will revise the updated date at the bottom of this page. We encourage Users to frequently check this page for any changes to stay informed about how we are helping to protect the personal information we collect.
                     </p>
                 </section>
-                
+
                 <div className="pt-6 border-t border-slate-700 text-sm text-slate-500 text-center">
                     Last Updated: {new Date("2026-04-10").toLocaleDateString()}
                 </div>

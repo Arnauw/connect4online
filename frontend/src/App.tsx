@@ -1,3 +1,17 @@
+/**
+ * App - Root Router
+ *
+ * Defines the entire client-side routing tree using React Router.
+ * Uses HashRouter so all navigation happens via the URL hash (#/route),
+ * which means the server always receives "/" — no server-side routing config needed.
+ *
+ * Route structure:
+ * - All routes are wrapped in LayoutWrapper (applies PageLayout: background, nav bar, audio)
+ * - Most routes are public (no auth required)
+ * - /profile is protected — redirects to /login if no token
+ * - Catch-all (*) redirects unknown URLs back to home
+ */
+
 import './App.css'
 import {HashRouter, Navigate, Outlet, Route, Routes} from "react-router-dom";
 import {Toaster} from "react-hot-toast";
@@ -16,6 +30,7 @@ import {ProtectedRoute} from "./components/layout/ProtectedRoute.tsx";
 import {OnlineBoard} from "./pages/OnlineBoard.tsx";
 import {PrivacyPolicy} from "./pages/PrivacyPolicy.tsx";
 
+/** Wraps all routes in the shared PageLayout (background image, audio, nav badge) */
 const LayoutWrapper = () => {
     return (
         <PageLayout>
@@ -25,9 +40,9 @@ const LayoutWrapper = () => {
 };
 
 function App() {
-
     return (
         <>
+            {/* Global toast notification system — styled to match dark neon theme */}
             <Toaster
                 position="top-center"
                 toastOptions={{
@@ -40,22 +55,20 @@ function App() {
                         boxShadow: '0 0 20px rgba(34, 211, 238, 0.2)',
                     },
                     success: {
-                        iconTheme: {
-                            primary: '#22d3ee',
-                            secondary: '#1e293b',
-                        },
+                        iconTheme: { primary: '#22d3ee', secondary: '#1e293b' },
                     },
                     error: {
-                        iconTheme: {
-                            primary: '#ef4444',
-                            secondary: '#1e293b',
-                        },
+                        iconTheme: { primary: '#ef4444', secondary: '#1e293b' },
                     },
                 }}
             />
+
             <HashRouter>
                 <Routes>
+                    {/* All routes share the same layout wrapper */}
                     <Route element={<LayoutWrapper/>}>
+
+                        {/* Public routes */}
                         <Route path="/" element={<Home/>}/>
                         <Route path="/local1p" element={<LocalGame1P/>}/>
                         <Route path="/local2p" element={<LocalGame2P/>}/>
@@ -67,11 +80,15 @@ function App() {
                         <Route path="/reset-password" element={<ResetPassword/>}/>
                         <Route path="/settings" element={<Settings/>} />
                         <Route path="/privacy" element={<PrivacyPolicy/>} />
+
+                        {/* Catch-all: unknown URL → home */}
                         <Route path="*" element={<Navigate to="/" replace />} />
 
+                        {/* Protected routes — require valid JWT token */}
                         <Route element={<ProtectedRoute/>}>
                             <Route path="/profile" element={<Profile/>}/>
                         </Route>
+
                     </Route>
                 </Routes>
             </HashRouter>
@@ -80,4 +97,3 @@ function App() {
 };
 
 export default App
-

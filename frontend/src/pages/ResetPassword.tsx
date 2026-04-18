@@ -1,3 +1,20 @@
+/**
+ * ResetPassword Page
+ *
+ * Handles the password reset form after the user clicked the email link.
+ * The reset token is parsed from the URL query string: ?token=xxx
+ *
+ * Flow:
+ * 1. User clicks link in email → lands here with ?token=...
+ * 2. User enters new password + confirmation
+ * 3. POST /api/reset-password/reset with token + password
+ * 4. On success, redirects to /login with a success message
+ *
+ * Safety:
+ * - If no token in URL, immediately redirects to /login
+ * - Returns null during render if token is missing (avoids flash of form)
+ */
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/axios";
@@ -8,12 +25,13 @@ import { TopNavButton } from "../components/ui/TopNavButton";
 export const ResetPassword = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const token = searchParams.get("token");
+    const token = searchParams.get("token");  // Token from the email link
     const [password, setPassword] = useState<string>("");
     const [confirmPassword, setConfirmPassword] = useState<string>("");
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
 
+    // Guard: redirect immediately if page was loaded without a valid token
     useEffect(() => {
         if (!token) {
             navigate("/login", { state: { error: "Missing Reset Token." } });
@@ -41,6 +59,7 @@ export const ResetPassword = () => {
                 password: password
             });
 
+            // Pass success message to login page via navigation state
             navigate("/login", {
                 state: { successMessage: "Credentials updated successfully. Please authenticate." }
             });
@@ -57,6 +76,7 @@ export const ResetPassword = () => {
         }
     };
 
+    // Don't render the form if there's no token — effect above will redirect
     if (!token) return null;
 
     return (

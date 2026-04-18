@@ -1,3 +1,18 @@
+/**
+ * Register Page
+ *
+ * Registration form — collects email, username, and password.
+ * Validates client-side before submitting to POST /api/register.
+ *
+ * On success, redirects to /login with a "check your email" success message.
+ * The user must click the verification link before they can log in.
+ *
+ * Inline validation feedback:
+ * - Email: shown after blur if invalid
+ * - Username: shown after blur if invalid (3-20 chars, letters/numbers/hyphens/underscores)
+ * - Password: live requirements checklist via PasswordRequirements component
+ */
+
 import { type ChangeEvent, type FormEvent, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -19,18 +34,20 @@ export const Register = () => {
     const [formData, setFormData] = useState<RegisterFormData>({ email: "", username: "", password: "" });
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
+
+    // Track whether each field has been touched so we only show errors after blur
     const [emailTouched, setEmailTouched] = useState(false);
     const [usernameTouched, setUsernameTouched] = useState(false);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        setError(""); // Clear error on change
+        setError(""); // Clear server-side error when user edits
     };
 
     const handleSubmit = async (e?: FormEvent) => {
         if (e) e.preventDefault();
 
-        // Client-side validation
+        // Run all validations before hitting the API
         if (!validateEmail(formData.email)) {
             toast.error('Please enter a valid email address');
             return;
@@ -57,6 +74,7 @@ export const Register = () => {
 
             toast.success('Registration successful! Check your email to verify your account.');
 
+            // Pass success message via navigation state so Login page can display it
             navigate("/login", {
                 state: {
                     successMessage:
@@ -68,9 +86,6 @@ export const Register = () => {
             console.error("Full Error Object:", err);
 
             if (err.response) {
-                console.error("Server Data:", err.response.data);
-                console.error("Server Status:", err.response.status);
-
                 if (err.response.data && err.response.data.error) {
                     setError(err.response.data.error);
                     toast.error(err.response.data.error);
@@ -105,6 +120,7 @@ export const Register = () => {
                 onSubmit={handleSubmit}
                 className="flex flex-col gap-6 w-full max-w-md bg-slate-900/50 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(168,85,247,0.15)]"
             >
+                {/* Email with inline validation after blur */}
                 <div>
                     <NeonInput
                         label="Email"
@@ -120,6 +136,7 @@ export const Register = () => {
                     )}
                 </div>
 
+                {/* Username with inline validation after blur */}
                 <div>
                     <NeonInput
                         label="Username"
@@ -137,6 +154,7 @@ export const Register = () => {
                     )}
                 </div>
 
+                {/* Password with live requirements checklist */}
                 <div>
                     <NeonInput
                         label="Password"
@@ -148,6 +166,7 @@ export const Register = () => {
                     <PasswordRequirements password={formData.password} />
                 </div>
 
+                {/* Server-side error (e.g. email already in use) */}
                 {error && (
                     <div className="text-red-500 font-bold text-center animate-pulse bg-red-950/30 p-2 rounded border border-red-500/50">
                         {error}
