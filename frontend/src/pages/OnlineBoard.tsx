@@ -199,7 +199,6 @@ export const OnlineBoard = () => {
 
             // Opponent left during an in-progress game → forfeit, we win
             if (data.type === 'OPPONENT_LEFT') {
-                playSound(winSfx);
                 setBoard(data.board);
                 setCurrentTurn(data.currentTurn);
                 setStatus('FINISHED');
@@ -296,6 +295,7 @@ export const OnlineBoard = () => {
 
     /** Actually leave the match — called only after user confirms the modal */
     const executeLeaveMatch = async () => {
+        hasPlayedEndSoundRef.current = true; // prevent end-game sound for the leaving player (ref is sync, no batching issues)
         setCountdown(null);
         setIsLeaving(true);
         try {
