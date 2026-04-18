@@ -60,7 +60,8 @@ class JWTCreatedListener
         $payload['avatar']   = $user->getAvatar();
         $payload['roles']    = $user->getRoles();
         $payload['settings'] = $user->getSettings();
-        $payload['ip']       = $request?->getClientIp();  // Stored for audit/security purposes
+        // IP intentionally excluded — JWT is base64-readable and stored in localStorage,
+        // so including the IP would expose it to anyone who reads the token.
 
         $event->setData($payload);
     }

@@ -78,6 +78,11 @@ class RegistrationController extends AbstractController
             return $this->json(['error' => 'Missing fields'], 400);
         }
 
+        // Server-side username validation (mirrors frontend validateUsername())
+        if (!preg_match('/^[a-zA-Z0-9_-]{3,20}$/', $username)) {
+            return $this->json(['error' => 'Username must be 3-20 characters: letters, numbers, hyphens, underscores only'], 400);
+        }
+
         // Server-side password strength validation (mirrors frontend validation.ts)
         if (strlen($password) < 8) {
             return $this->json(['error' => 'Password must be at least 8 characters long'], 400);

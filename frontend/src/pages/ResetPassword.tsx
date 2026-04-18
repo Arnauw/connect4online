@@ -13,6 +13,8 @@
  * Safety:
  * - If no token in URL, immediately redirects to /login
  * - Returns null during render if token is missing (avoids flash of form)
+ * - Validates password strength client-side (matches registration requirements)
+ * - Backend also validates strength server-side in ResetPasswordController
  */
 
 import { useState, useEffect } from "react";
@@ -21,6 +23,7 @@ import { api } from "../api/axios";
 import { NeonInput } from "../components/ui/NeonInput";
 import { MenuButton } from "../components/ui/MenuButton";
 import { TopNavButton } from "../components/ui/TopNavButton";
+import { validatePassword } from "../utils/validation";
 
 export const ResetPassword = () => {
     const navigate = useNavigate();
@@ -46,8 +49,10 @@ export const ResetPassword = () => {
             return;
         }
 
-        if (password.length < 6) {
-            setError("Password too short (min 6 chars).");
+        // Enforce same strength rules as registration
+        const validation = validatePassword(password);
+        if (!validation.valid) {
+            setError(validation.errors[0] || 'Invalid password');
             return;
         }
 

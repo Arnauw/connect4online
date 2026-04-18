@@ -95,6 +95,20 @@ class ResetPasswordController extends AbstractController
             return $this->json(['error' => 'Missing token or password'], 400);
         }
 
+        // Enforce same password strength rules as registration (mirrors RegistrationController)
+        if (strlen($plainPassword) < 8) {
+            return $this->json(['error' => 'Password must be at least 8 characters long'], 400);
+        }
+        if (!preg_match('/[A-Z]/', $plainPassword)) {
+            return $this->json(['error' => 'Password must contain at least one uppercase letter'], 400);
+        }
+        if (!preg_match('/[a-z]/', $plainPassword)) {
+            return $this->json(['error' => 'Password must contain at least one lowercase letter'], 400);
+        }
+        if (!preg_match('/[0-9]/', $plainPassword)) {
+            return $this->json(['error' => 'Password must contain at least one number'], 400);
+        }
+
         try {
             // Validates the token and returns the associated User
             // Throws ResetPasswordExceptionInterface if token is invalid, expired, or already used

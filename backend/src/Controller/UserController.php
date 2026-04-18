@@ -102,8 +102,9 @@ class UserController extends AbstractController
      * optimizes the image (resize to max 500px), then saves it via VichUploader.
      *
      * Validation:
-     * - Must be JPG, PNG, or WEBP
+     * - Extension whitelist: jpg, jpeg, png, webp
      * - Max 10MB before optimization
+     * - getimagesize() deep parse confirms the binary is a real image (not a spoofed header)
      *
      * After upload, VichUploader generates a unique filename and stores it in the
      * `avatar` field on the User entity. The frontend can then use:
@@ -119,15 +120,25 @@ class UserController extends AbstractController
             return $this->json(['error' => 'No file uploaded'], 400);
         }
 
-        // Validate file type — only images allowed
-        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!in_array($file->getMimeType(), $allowedMimeTypes, true)) {
+        // Validate file extension — whitelist only (prevents disguised executables)
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, $allowedExtensions, true)) {
             return $this->json(['error' => 'Invalid file type (JPG, PNG, WEBP only)'], 400);
         }
 
         // Validate file size — 10MB maximum
         if ($file->getSize() > 10 * 1024 * 1024) {
             return $this->json(['error' => 'File too large (Max 10MB)'], 400);
+        }
+
+        // Deep MIME validation: getimagesize() actually parses the binary image data,
+        // unlike getMimeType() which only reads the file header and can be spoofed.
+        // This ensures a PHP file renamed to .jpg cannot pass as a valid image.
+        $imageInfo = @getimagesize($file->getPathname());
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if ($imageInfo === false || !in_array($imageInfo['mime'], $allowedMimeTypes, true)) {
+            return $this->json(['error' => 'Invalid image file'], 400);
         }
 
         // Resize image to max 500x500 to save storage and bandwidth
