@@ -158,6 +158,8 @@ class GameController extends AbstractController
             $game->setWinningLine($winningLine);
             $game->setP1WantsRematch(false);
             $game->setP2WantsRematch(false);
+            $game->setP1HasLeft(false);
+            $game->setP2HasLeft(false);
 
             if ($playerNum === 1) {
                 $game->setScoreP1($game->getScoreP1() + 1);
@@ -168,6 +170,8 @@ class GameController extends AbstractController
             $game->setStatus('FINISHED');
             $game->setP1WantsRematch(false);
             $game->setP2WantsRematch(false);
+            $game->setP1HasLeft(false);
+            $game->setP2HasLeft(false);
         } else {
             $game->setCurrentTurn($playerNum === 1 ? 2 : 1);
         }
@@ -280,6 +284,8 @@ class GameController extends AbstractController
             $game->setWinningLine(null);
             $game->setP1WantsRematch(false);
             $game->setP2WantsRematch(false);
+            $game->setP1HasLeft(false);
+            $game->setP2HasLeft(false);
             $game->setCurrentTurn($nextTurn);
 
             $this->em->flush();
@@ -341,6 +347,8 @@ class GameController extends AbstractController
             $game->setStatus('FINISHED');
             $winner = $isPlayer1 ? $game->getPlayer2() : $game->getPlayer1();
             $game->setWinner($winner);
+            $game->setP1HasLeft(false);
+            $game->setP2HasLeft(false);
 
             // Update score for the winner
             if ($winner === $game->getPlayer1()) {
@@ -367,7 +375,34 @@ class GameController extends AbstractController
             return $this->json(['message' => 'You forfeited the match.']);
         }
 
-        // If game is already FINISHED, they are just leaving the post-game lobby
+        // If game is already FINISHED, mark them as having left
+        if ($game->getStatus() === 'FINISHED') {
+            if ($isPlayer1) {
+                $game->setP1HasLeft(true);
+            } elseif ($isPlayer2) {
+                $game->setP2HasLeft(true);
+            }
+
+            $this->em->flush();
+
+            // Broadcast that this player has left to notify the opponent
+            $playerNumWhoLeft = $isPlayer1 ? 1 : 2;
+            $update = new Update($topic, json_encode([
+                'type' => 'PLAYER_LEFT_FINISHED_GAME',
+                'playerNum' => $playerNumWhoLeft
+            ], JSON_THROW_ON_ERROR));
+            $hub->publish($update);
+
+            // If BOTH players have left, delete the game
+            if ($game->isP1HasLeft() && $game->isP2HasLeft()) {
+                $this->em->remove($game);
+                $this->em->flush();
+                return $this->json(['message' => 'Game deleted (both players left).']);
+            }
+
+            return $this->json(['message' => 'Left match.']);
+        }
+
         return $this->json(['message' => 'Left match.']);
     }
 }

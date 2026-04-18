@@ -35,8 +35,10 @@ export const OnlineBoard = () => {
     const [rematchStatus, setRematchStatus] = useState<RematchStatus>({p1: false, p2: false});
     const [showWarning, setShowWarning] = useState<boolean>(false);
     const [isLeaving, setIsLeaving] = useState(false);
+    const [opponentHasLeft, setOpponentHasLeft] = useState(false);
     const endGameAudioRef = useRef<HTMLAudioElement | null>(null);
     const hasPlayedEndSoundRef = useRef<boolean>(false);
+    const statusRef = useRef<string>("WAITING");
 
     // 1. Fetch Initial State
     useEffect(() => {
@@ -76,9 +78,18 @@ export const OnlineBoard = () => {
         fetchGame();
     }, [roomCode, navigate, setActiveGameStatus]);
 
+    // Keep statusRef in sync with status state
     useEffect(() => {
-        return () => setActiveGameStatus(null);
-    }, [setActiveGameStatus]);
+        statusRef.current = status;
+    }, [status]);
+
+    // Cleanup: Only clear active game status on unmount
+    useEffect(() => {
+        return () => {
+            setActiveGameStatus(null);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // 2. Listen to Mercure (Real-Time Updates)
     useEffect(() => {
@@ -131,6 +142,7 @@ export const OnlineBoard = () => {
                 setWinningLine(null);
                 setScore({p1: data.scoreP1, p2: data.scoreP2});
                 setRematchStatus({p1: false, p2: false});
+                setOpponentHasLeft(false);
 
                 // Reset sound played flag so new game can play victory/defeat sound
                 hasPlayedEndSoundRef.current = false;
@@ -148,10 +160,17 @@ export const OnlineBoard = () => {
                 // Clear active room locally so we don't get the "Rejoin" button anymore
                 setActiveRoom(null);
             }
+
+            if (data.type === 'PLAYER_LEFT_FINISHED_GAME') {
+                // Check if the player who left is the opponent
+                if (data.playerNum !== myPlayerNum) {
+                    setOpponentHasLeft(true);
+                }
+            }
         };
 
         return () => eventSource.close();
-    }, [roomCode, playSound, setActiveGameStatus, setActiveRoom]);
+    }, [roomCode, playSound, setActiveGameStatus, setActiveRoom, myPlayerNum]);
 
     // Play sounds when game ends
     useEffect(() => {
@@ -229,10 +248,11 @@ export const OnlineBoard = () => {
 
     // The handler for the Menu/Leave buttons
     const handleLeaveClick = () => {
-        if (status === 'PLAYING') {
-            setShowWarning(true); // Pop the modal
+        // Always show confirmation modal for PLAYING or FINISHED states
+        if (status === 'PLAYING' || status === 'FINISHED') {
+            setShowWarning(true);
         } else {
-            executeLeaveMatch();  // Leave instantly if game is over/waiting
+            executeLeaveMatch();  // Leave instantly only if WAITING
         }
     };
 
@@ -243,6 +263,9 @@ export const OnlineBoard = () => {
 
     // Check if I have already requested a rematch
     const haveIRequestedRematch = (myPlayerNum === 1 && rematchStatus.p1) || (myPlayerNum === 2 && rematchStatus.p2);
+
+    // Check if opponent requested a rematch
+    const opponentWantsRematch = (myPlayerNum === 1 && rematchStatus.p2) || (myPlayerNum === 2 && rematchStatus.p1);
 
     return (
         <div className="relative flex flex-col items-center w-full h-full min-h-screen">
@@ -260,7 +283,7 @@ export const OnlineBoard = () => {
                     className="flex items-center gap-4 md:gap-6 mt-4 bg-slate-900/60 px-4 md:px-6 py-2 rounded-full border border-slate-700 backdrop-blur-md shadow-lg">
 
                     {/* PLAYER 1 (Red) */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 relative">
                         <Avatar
                             avatarStr={myPlayerNum === 1 ? myAvatar : opponentAvatar}
                             className="w-10 h-10 rounded-full border-2 border-red-500 shadow-[0_0_10px_red] text-red-500"
@@ -271,12 +294,18 @@ export const OnlineBoard = () => {
                             <span
                                 className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_red]">{score.p1}</span>
                         </div>
+                        {/* Show "Left" bubble if opponent is Player 1 and has left */}
+                        {myPlayerNum === 2 && opponentHasLeft && (
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500/90 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-bounce whitespace-nowrap">
+                                PLAYER LEFT
+                            </div>
+                        )}
                     </div>
 
                     <span className="text-slate-600 font-bold text-xl">-</span>
 
                     {/* PLAYER 2 (Yellow) */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 relative">
                         <div className="flex flex-col items-center min-w-[50px]">
                             <span
                                 className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 2 ? "You" : opponentName}</span>
@@ -287,6 +316,12 @@ export const OnlineBoard = () => {
                             avatarStr={myPlayerNum === 2 ? myAvatar : opponentAvatar}
                             className="w-10 h-10 rounded-full border-2 border-yellow-400 shadow-[0_0_10px_yellow] text-yellow-400"
                         />
+                        {/* Show "Left" bubble if opponent is Player 2 and has left */}
+                        {myPlayerNum === 1 && opponentHasLeft && (
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500/90 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-bounce whitespace-nowrap">
+                                PLAYER LEFT
+                            </div>
+                        )}
                     </div>
 
                 </div>
@@ -336,7 +371,7 @@ export const OnlineBoard = () => {
                 {status === 'FINISHED' ? (
                     <div className="flex flex-col items-center gap-3 w-64 mt-4">
 
-                        {!haveIRequestedRematch && (
+                        {!haveIRequestedRematch && !opponentHasLeft && (
                             (myPlayerNum === 1 && rematchStatus.p2) || (myPlayerNum === 2 && rematchStatus.p1)
                         ) && (
                             <div
@@ -345,13 +380,15 @@ export const OnlineBoard = () => {
                             </div>
                         )}
 
-                        <MenuButton
-                            // PREVENT DOUBLE CLICKS: Pass undefined to onClick if already requested
-                            onClick={haveIRequestedRematch ? undefined : handleRematch}
-                            secondary={haveIRequestedRematch}
-                        >
-                            {haveIRequestedRematch ? "AWAITING OPPONENT..." : "REMATCH"}
-                        </MenuButton>
+                        {!opponentHasLeft && (
+                            <MenuButton
+                                // PREVENT DOUBLE CLICKS: Pass undefined to onClick if already requested
+                                onClick={haveIRequestedRematch ? undefined : handleRematch}
+                                secondary={haveIRequestedRematch}
+                            >
+                                {haveIRequestedRematch ? "AWAITING OPPONENT..." : "REMATCH"}
+                            </MenuButton>
+                        )}
 
                         <button onClick={handleLeaveClick} className="text-slate-500 hover:text-white text-sm underline transition-colors mt-2">
                             Leave Match
@@ -366,15 +403,23 @@ export const OnlineBoard = () => {
                 )}
             </div>
 
-            {/* 👇 LOCAL MODAL 👇 */}
+            {/* 👇 CONFIRMATION MODAL 👇 */}
             {showWarning && (
                 <div
                     className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div
                         className="bg-slate-900 border-2 border-red-500 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_40px_rgba(220,38,38,0.4)] text-center animate-bounce-in">
-                        <h3 className="text-xl font-bold text-red-500 mb-2">ABANDON MATCH?</h3>
+                        <h3 className="text-xl font-bold text-red-500 mb-2">
+                            {status === 'PLAYING' ? 'ABANDON MATCH?' : 'LEAVE MATCH?'}
+                        </h3>
                         <p className="text-slate-300 mb-6 text-sm">
-                            Leaving the grid now will count as a forfeit. Are you sure you want to disconnect?
+                            {status === 'PLAYING' ? (
+                                'Leaving the grid now will count as a forfeit. Are you sure you want to disconnect?'
+                            ) : opponentWantsRematch ? (
+                                "Your opponent asked for a rematch. Are you sure you want to leave? You won't be able to rejoin."
+                            ) : (
+                                "Are you sure you want to leave? You can stay for a rematch or leave this room (you can't rejoin)."
+                            )}
                         </p>
 
                         <div className="flex gap-4 justify-center">
@@ -388,7 +433,7 @@ export const OnlineBoard = () => {
                                 onClick={executeLeaveMatch}
                                 className="px-6 py-2 rounded-full bg-red-600 text-white hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all font-bold text-sm"
                             >
-                                FORFEIT
+                                {status === 'PLAYING' ? 'FORFEIT' : 'LEAVE'}
                             </button>
                         </div>
                     </div>

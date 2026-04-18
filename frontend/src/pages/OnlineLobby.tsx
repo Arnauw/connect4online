@@ -1,4 +1,4 @@
-import {useState, useEffect, type FormEvent} from "react";
+import {useState, useEffect, useRef, type FormEvent} from "react";
 import {useNavigate} from "react-router-dom";
 import toast from "react-hot-toast";
 import {api} from "../api/axios";
@@ -17,7 +17,8 @@ export const OnlineLobby = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [copied, setCopied] = useState(false);
-    const { setActiveRoom } = useAuth();
+    const { activeRoom, setActiveRoom } = useAuth();
+    const gameStartedRef = useRef(false);
 
     const handleCopyCode = () => {
         navigator.clipboard.writeText(roomCode);
@@ -28,8 +29,15 @@ export const OnlineLobby = () => {
 
     // --- HOST LOGIC: Create Game ---
     const handleHostGame = async () => {
+        // Prevent hosting if already have an active room
+        if (activeRoom) {
+            toast.error("You already have an active room! Leave it first.");
+            return;
+        }
+
         setLoading(true);
         setError("");
+        gameStartedRef.current = false; // Reset flag when creating new room
         try {
             const response = await api.post("/api/game/create");
             setRoomCode(response.data.roomCode);
@@ -42,6 +50,27 @@ export const OnlineLobby = () => {
             toast.error(errorMsg);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // --- HOST LOGIC: Cancel/Leave Room ---
+    const handleCancelHost = async () => {
+        if (!roomCode) return;
+
+        try {
+            await api.post(`/api/game/${roomCode}/leave`);
+            setActiveRoom(null);
+            setRoomCode("");
+            setMode("select");
+            gameStartedRef.current = false; // Reset flag
+            toast.success("Room cancelled");
+        } catch (err: any) {
+            console.error("Failed to cancel room:", err);
+            // Still clean up locally even if backend fails
+            setActiveRoom(null);
+            setRoomCode("");
+            setMode("select");
+            gameStartedRef.current = false; // Reset flag
         }
     };
 
@@ -59,6 +88,7 @@ export const OnlineLobby = () => {
             const data = JSON.parse(event.data);
             if (data.type === 'GAME_STARTED') {
                 // Opponent joined! Navigate to the game board.
+                gameStartedRef.current = true;
                 eventSource.close();
                 navigate(`/online/${roomCode}`);
             }
@@ -69,6 +99,20 @@ export const OnlineLobby = () => {
             eventSource.close();
         };
     }, [mode, roomCode, navigate]);
+
+    // --- CLEANUP: Cancel room if user navigates away while hosting ---
+    useEffect(() => {
+        return () => {
+            // Only cleanup if user navigates away while hosting AND the game hasn't started
+            // Don't cleanup if game started (opponent joined) - that's a legitimate navigation
+            if (mode === "host" && roomCode && !gameStartedRef.current) {
+                api.post(`/api/game/${roomCode}/leave`).catch(err =>
+                    console.error("Failed to cleanup room on unmount:", err)
+                );
+                setActiveRoom(null);
+            }
+        };
+    }, [mode, roomCode, setActiveRoom]);
 
     // --- JOIN LOGIC: Enter Code ---
     const handleJoinGame = async (e?: FormEvent) => {
@@ -119,8 +163,8 @@ export const OnlineLobby = () => {
                     <>
                         <p className="text-slate-400 text-sm mb-4">Establish a new connection or join an existing
                             grid.</p>
-                        <MenuButton onClick={handleHostGame}>
-                            {loading ? "INITIALIZING..." : "HOST NEW MATCH"}
+                        <MenuButton onClick={handleHostGame} disabled={!!activeRoom}>
+                            {loading ? "INITIALIZING..." : activeRoom ? "ALREADY HOSTING" : "HOST NEW MATCH"}
                         </MenuButton>
                         <MenuButton onClick={() => setMode("join")}>
                             JOIN VIA CODE
@@ -175,7 +219,7 @@ export const OnlineLobby = () => {
                             AWAITING CONNECTION...
                         </div>
 
-                        <button onClick={() => setMode("select")}
+                        <button onClick={handleCancelHost}
                                 className="text-slate-500 hover:text-white text-sm underline mt-2">
                             Cancel
                         </button>

@@ -19,6 +19,9 @@ class Game
         $this->scoreP2 = 0;
         $this->p1WantsRematch = false;
         $this->p2WantsRematch = false;
+        $this->createdAt = new \DateTime();
+        $this->p1HasLeft = false;
+        $this->p2HasLeft = false;
     }
 
     #[ORM\Id]
@@ -61,6 +64,15 @@ class Game
 
     #[ORM\Column(nullable: true)]
     private ?bool $p2WantsRematch = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $createdAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $p1HasLeft = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $p2HasLeft = null;
 
     public function getId(): ?int
     {
@@ -207,6 +219,42 @@ class Game
     public function setP2WantsRematch(?bool $p2WantsRematch): static
     {
         $this->p2WantsRematch = $p2WantsRematch;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function isP1HasLeft(): ?bool
+    {
+        return $this->p1HasLeft;
+    }
+
+    public function setP1HasLeft(?bool $p1HasLeft): static
+    {
+        $this->p1HasLeft = $p1HasLeft;
+
+        return $this;
+    }
+
+    public function isP2HasLeft(): ?bool
+    {
+        return $this->p2HasLeft;
+    }
+
+    public function setP2HasLeft(?bool $p2HasLeft): static
+    {
+        $this->p2HasLeft = $p2HasLeft;
 
         return $this;
     }
