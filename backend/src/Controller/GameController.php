@@ -95,6 +95,7 @@ class GameController extends AbstractController
         $this->em->persist($game);
         $this->em->flush();
 
+
         return $this->json([
             'id' => $game->getId(),
             'roomCode' => $game->getRoomCode(),
@@ -153,6 +154,7 @@ class GameController extends AbstractController
         // Add this user as Player 2 and start the game
         $game->setPlayer2($user);
         $game->setStatus('PLAYING');
+        $game->updateLastActivity();
 
         $this->em->flush();
 
@@ -299,6 +301,7 @@ class GameController extends AbstractController
         }
 
         // Save all changes to database
+        $game->updateLastActivity();
         $this->em->flush();
 
         // MERCURE: Broadcast updated game state to both players
@@ -451,6 +454,7 @@ class GameController extends AbstractController
             $game->setP1HasLeft(false);
             $game->setP2HasLeft(false);
             $game->setCurrentTurn($nextTurn);
+            $game->updateLastActivity();
 
             $this->em->flush();
 

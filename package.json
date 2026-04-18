@@ -14,7 +14,8 @@
     "clear": "cd backend && symfony console cache:clear",
     "messenger": "cd backend && symfony console messenger:consume async -vv",
     "installAll": "concurrently \"cd frontend && pnpm install\" \"cd backend && composer install\"",
-    "back-test": "cd backend && php bin/phpunit"
+    "back-test": "cd backend && php bin/phpunit",
+    "clean-rooms": "cd backend && symfony console app:cleanup-stale-games"
   },
   "keywords": [],
   "author": "",

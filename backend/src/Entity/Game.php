@@ -58,6 +58,9 @@ class Game
         // Initialize left flags to false (both players present)
         $this->p1HasLeft = false;
         $this->p2HasLeft = false;
+
+        // Track last activity for stale game cleanup
+        $this->lastActivityAt = new \DateTime();
     }
 
     // ==================
@@ -191,6 +194,14 @@ class Game
      */
     #[ORM\Column(nullable: true)]
     private ?bool $p2HasLeft = null;
+
+    /**
+     * @var \DateTimeInterface|null Timestamp of last meaningful game activity
+     * Updated on: create, join, move, rematch
+     * Used by CleanupStaleGamesCommand to delete abandoned rooms after 1 hour
+     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $lastActivityAt = null;
 
     // ==================
     // GETTERS & SETTERS
@@ -363,6 +374,23 @@ class Game
     public function setP2HasLeft(?bool $p2HasLeft): static
     {
         $this->p2HasLeft = $p2HasLeft;
+        return $this;
+    }
+
+    public function getLastActivityAt(): ?\DateTimeInterface
+    {
+        return $this->lastActivityAt;
+    }
+
+    public function setLastActivityAt(\DateTimeInterface $lastActivityAt): static
+    {
+        $this->lastActivityAt = $lastActivityAt;
+        return $this;
+    }
+
+    public function updateLastActivity(): static
+    {
+        $this->lastActivityAt = new \DateTime();
         return $this;
     }
 }
