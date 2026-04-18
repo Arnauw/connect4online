@@ -114,19 +114,19 @@ api.interceptors.response.use(
 
                 } catch (refreshError) {
                     // Refresh token is also expired or invalid
-                    console.error("Session expired.", refreshError);
+                    console.error("Session expired.", (refreshError as Error).message);
 
-                    // Clean up stored tokens
                     localStorage.removeItem("token");
                     localStorage.removeItem("refresh_token");
 
-                    // Redirect to login page with error message
                     window.location.href = "/#/login?error=session_expired";
+                    return new Promise(() => {}); // swallow — page is navigating away
                 }
             } else {
-                // No refresh token available - user needs to log in again
+                // No token at all — user was never logged in
                 localStorage.removeItem("token");
-                window.location.href = "/#/login?error=session_expired";
+                window.location.href = "/#/login?error=login_required";
+                return new Promise(() => {}); // swallow — page is navigating away
             }
         }
 

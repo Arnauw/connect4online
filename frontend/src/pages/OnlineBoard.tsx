@@ -74,6 +74,7 @@ export const OnlineBoard = () => {
     const [showWarning, setShowWarning] = useState<boolean>(false);
     const [isLeaving, setIsLeaving] = useState(false);
     const [opponentHasLeft, setOpponentHasLeft] = useState(false);
+    const [countdown, setCountdown] = useState<number | null>(null);
 
     // Audio refs
     const endGameAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -205,13 +206,15 @@ export const OnlineBoard = () => {
                 setActiveGameStatus('FINISHED');
                 setWinnerId(data.winnerId);
                 setScore({p1: data.scoreP1, p2: data.scoreP2});
-                setActiveRoom(null);  // Remove from localStorage so Home doesn't show "Rejoin"
+                setActiveRoom(null);
+                setCountdown(10);
             }
 
             // Opponent left after game was already finished (they clicked "Leave Match")
             if (data.type === 'PLAYER_LEFT_FINISHED_GAME') {
                 if (data.playerNum !== myPlayerNum) {
-                    setOpponentHasLeft(true);  // Show "PLAYER LEFT" bubble + hide Rematch button
+                    setOpponentHasLeft(true);
+                    setCountdown(10);
                 }
             }
         };
@@ -252,6 +255,19 @@ export const OnlineBoard = () => {
         };
     }, [status, winnerId, user?.id, isLeaving, settings.sfx, settings.volume]);
 
+    // EFFECT 6: Countdown auto-leave — ticks every second after opponent leaves
+    useEffect(() => {
+        if (countdown === null) return;
+        if (countdown === 0) {
+            api.post(`/api/game/${roomCode}/leave`).catch(() => {});
+            setActiveRoom(null);
+            navigate('/');
+            return;
+        }
+        const timer = setTimeout(() => setCountdown(c => c !== null ? c - 1 : null), 1000);
+        return () => clearTimeout(timer);
+    }, [countdown, roomCode, navigate, setActiveRoom]);
+
     /** Send a move to the backend — server validates turn and updates game state */
     const handleDrop = async (colIndex: number) => {
         if (status !== 'PLAYING' || currentTurn !== myPlayerNum) return;
@@ -280,6 +296,7 @@ export const OnlineBoard = () => {
 
     /** Actually leave the match — called only after user confirms the modal */
     const executeLeaveMatch = async () => {
+        setCountdown(null);
         setIsLeaving(true);
         try {
             await api.post(`/api/game/${roomCode}/leave`);
@@ -438,6 +455,13 @@ export const OnlineBoard = () => {
                     </div>
                 )}
             </div>
+
+            {/* Countdown banner — shown when opponent leaves, auto-redirects to home */}
+            {countdown !== null && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-red-500/60 text-red-400 px-6 py-3 rounded-full font-bold text-sm shadow-[0_0_20px_rgba(220,38,38,0.3)] z-50 whitespace-nowrap">
+                    Opponent left — returning to lobby in {countdown}s
+                </div>
+            )}
 
             {/* Leave confirmation modal — text adapts based on game status and opponent state */}
             {showWarning && (

@@ -14,7 +14,7 @@
  * - state.successMessage → Success message passed from another page (e.g. after registration)
  */
 
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {useNavigate, Link, useLocation, useSearchParams} from "react-router-dom";
 import toast from "react-hot-toast";
 import {api} from "../api/axios";
@@ -33,6 +33,7 @@ export const Login = () => {
     const [password, setPassword] = useState<string>("");
     const [error, setError] = useState<string>("");
     const [success, setSuccess] = useState<string>("");
+    const paramHandledRef = useRef(false);
 
     // Handle feedback messages from query params or navigation state on mount
     useEffect(() => {
@@ -40,30 +41,37 @@ export const Login = () => {
         if (location.state && location.state.successMessage) {
             setSuccess(location.state.successMessage);
             toast.success(location.state.successMessage, { duration: 6000 });
-            // Clear navigation state so it doesn't show again on refresh
             window.history.replaceState({}, document.title);
         }
 
         const verified = searchParams.get("verified");
         const errorParam = searchParams.get("error");
 
-        // ?verified=true: user just clicked the email verification link
+        // Guard: only handle URL params once — prevents double-fire from strict mode
+        // or effect re-running after navigate() changes location
+        if (!(verified || errorParam) || paramHandledRef.current) return;
+        paramHandledRef.current = true;
+
         if (verified === "true") {
             const msg = "ACCESS GRANTED: Neural Link Verified. You may now login.";
             setSuccess(msg);
             toast.success(msg);
         }
 
-        // ?error=invalid_token: verification link expired or invalid
         if (errorParam === "invalid_token") {
             const msg = "VERIFICATION FAILED: Link expired or invalid.";
             setError(msg);
             toast.error(msg);
         }
 
-        // ?error=session_expired: refresh token expired, axios interceptor forced logout
         if (errorParam === "session_expired") {
             const msg = "SESSION EXPIRED: Please re-authenticate.";
+            setError(msg);
+            toast.error(msg);
+        }
+
+        if (errorParam === "login_required") {
+            const msg = "LOGIN REQUIRED: Please authenticate to continue.";
             setError(msg);
             toast.error(msg);
         }
