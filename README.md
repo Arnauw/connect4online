@@ -1,148 +1,210 @@
 # Connect4Online
 
-A modern, hybrid Connect 4 implementation featuring offline play, a Minimax-based AI bot, real-time multiplayer capabilities using Mercure, and a Cyberpunk Neon UI.
+A modern, hybrid Connect 4 implementation featuring offline play, a Web Worker-based AI bot, real-time online multiplayer via Mercure SSE, user accounts with email verification, and a Cyberpunk Neon UI.
 
-## 🚀 The Tech Stack
+---
+
+## 🚀 Tech Stack
 
 **Frontend:**
-*   **Framework:** React (via Vite)
-*   **Language:** TypeScript
-*   **Styling:** Tailwind CSS (Neon/Dark Theme)
-*   **Routing:** React Router (HashRouter)
-*   **State:** React Context API + Hooks + Web Workers (for AI)
+| | |
+|---|---|
+| Framework | React 19 (via Vite 7) |
+| Language | TypeScript 5.9 |
+| Styling | Tailwind CSS 4 (Neon/Dark Theme) |
+| Routing | React Router 7 (HashRouter) |
+| State | React Context API + Hooks |
+| HTTP | Axios (with JWT interceptor + auto-refresh) |
+| Real-time | Mercure SSE (EventSource) |
+| AI | Web Worker (background thread, no UI blocking) |
 
 **Backend:**
-*   **Framework:** Symfony 8.0 (Latest WebApp Pack)
-*   **Real-time:** Mercure Hub (Server-Sent Events)
-*   **Database:** PostgreSQL
-*   **Auth:** JWT (LexikJWTAuthenticationBundle v3.2+)
-*   **ORM:** Doctrine
+| | |
+|---|---|
+| Framework | Symfony 8.0 |
+| Language | PHP >= 8.4 |
+| Real-time | Mercure Hub (Server-Sent Events) |
+| Database | PostgreSQL 16 + Doctrine ORM |
+| Auth | JWT (LexikJWTAuthenticationBundle) + Refresh Tokens (GesdinetJWTRefreshTokenBundle) |
+| Email Verification | SymfonyCasts VerifyEmailBundle |
+| Password Reset | SymfonyCasts ResetPasswordBundle |
+| File Uploads | VichUploaderBundle (avatar images) |
+| Mailer | Symfony Mailer + Mailpit (dev) |
 
 **Infrastructure (Docker):**
-*   **DB:** PostgreSQL (Port 5432)
-*   **Real-time:** Mercure (Public Port 9090 / Internal 80)
-*   **Mail:** Mailpit (Port 8025 GUI / 1025 SMTP)
-*   **DB GUI:** Adminer (Port 8080)
+| Service | Host Port |
+|---|---|
+| PostgreSQL | 5433 |
+| Mercure Hub | 9090 |
+| Mailpit GUI | 8025 |
+| Mailpit SMTP | 1025 |
+| Adminer (DB GUI) | 8080 |
+
+---
+
+## ✨ Features
+
+- **Offline Play** — Local 2-player and vs Bot modes, game state survives page refresh
+- **AI Bot** — Web Worker-based bot running in a background thread
+- **User Accounts** — Registration, email verification, login, password reset
+- **Avatar Upload** — Upload/delete custom avatar images (JPEG, PNG, WEBP, max 10MB, auto-resized to 500px)
+- **User Settings** — Theme, music, SFX, volume — saved per account or guest (localStorage)
+- **Online Multiplayer** — Create/join rooms via 6-character code, real-time via Mercure SSE
+- **Game Features** — Move validation server-side, win/draw detection, score tracking, rematch system, forfeit handling
+- **Auto-cleanup** — Rooms inactive for 1h or older than 48h are auto-deleted via console command
+- **Security** — Server-side input validation, avatar deep MIME validation, JWT with 1h TTL + refresh tokens
 
 ---
 
 ## 📂 Project Structure
 
-This project uses a monorepo-style structure:
-
-*   `frontend/` - The React application (Vite).
-*   `backend/` - The Symfony API and Game Server.
-*   `package.json` - Root scripts to manage both simultaneously.
+```
+connect4online/
+├── frontend/        # React + Vite application
+├── backend/         # Symfony 8 API
+└── package.json     # Root scripts to manage both simultaneously
+```
 
 ---
 
 ## ⚡ Quick Start
 
-### 1. Initial Setup (Run Once)
+### 1. Prerequisites
 
-Before running the app for the first time, you need to set up the cryptographic keys for JWT authentication and the database schema.
+- Node.js + pnpm
+- PHP >= 8.4 + Composer
+- Docker + Docker Compose
+- Symfony CLI
+
+### 2. Install Dependencies
 
 ```bash
-# Install dependencies
-pnpm install
-cd backend && composer install
+pnpm installAll
+```
 
-# Generate JWT Keys (Required for Login)
+### 3. Environment Setup (Run Once)
+
+```bash
+# Generate JWT keypair (required for authentication)
 cd backend
 symfony console lexik:jwt:generate-keypair
-
-# Start Docker Containers
 cd ..
-pnpm docker
+```
 
-# Create Database & Schema
+### 4. Start Docker Infrastructure
+
+```bash
+pnpm docker
+```
+
+### 5. Create Database & Run Migrations
+
+```bash
 cd backend
 symfony console doctrine:database:create
 symfony console doctrine:migrations:migrate
+cd ..
 ```
 
-### 2. Run the App
-
-Use the unified command to start Docker, Symfony, and Vite all at once:
+### 6. Run the App
 
 ```bash
-# Runs everything
 pnpm all
 ```
 
-*   **Frontend:** `http://localhost:5173`
-*   **Backend API:** `http://127.0.0.1:8000`
-*   **Adminer (DB GUI):** `http://localhost:8080` (Server: `database`, User: `my_app_user`, Pass: `MySuperSecretPassword123`)
-*   **Mailpit:** `http://localhost:8025`
-*   **Mercure Hub:** `http://localhost:9090/.well-known/mercure/ui/`
+| Service | URL |
+|---|---|
+| Frontend | `http://localhost:5173` |
+| Backend API | `http://127.0.0.1:8000` |
+| Adminer (DB GUI) | `http://localhost:8080` — Server: `database`, User: `my_app_user`, Pass: `MySuperSecretPassword123` |
+| Mailpit (Email) | `http://localhost:8025` |
+| Mercure Hub UI | `http://localhost:9090/.well-known/mercure/ui/` |
 
 ---
 
-## 📜 Command Reference (`package.json`)
-
-We have configured custom scripts in the root `package.json` to make development faster.
+## 📜 Command Reference
 
 | Command | Description |
-| :--- | :--- |
-| **`pnpm all`** | **The "Start Button".** Starts Docker containers (detached) and then runs Frontend + Backend servers. |
-| `pnpm docker` | Starts the Docker infrastructure (Postgres, Mercure, Adminer, Mailpit). |
+|:---|:---|
+| **`pnpm all`** | **Start everything.** Starts Docker + Frontend + Backend simultaneously. |
+| `pnpm both` | Runs Frontend and Backend servers only (no Docker). |
+| `pnpm front` | Runs only the React dev server. |
+| `pnpm back` | Runs only the Symfony server (`--no-tls`). |
+| `pnpm docker` | Starts Docker infrastructure (Postgres, Mercure, Adminer, Mailpit). |
 | `pnpm dockerS` | Stops all Docker containers. |
-| `pnpm dockerDel` | **NUCLEAR OPTION.** Stops containers and **deletes data volumes**. Use this if the DB password gets out of sync. |
-| `pnpm both` | Runs Frontend and Backend servers concurrently (without starting Docker). |
-| `pnpm front` | Runs only the React Dev Server. |
-| `pnpm back` | Runs only the Symfony Server (`--no-tls`). |
-| `pnpm messenger` | Consumes the async message queue (for background tasks). |
+| `pnpm dockerDel` | **NUCLEAR.** Stops containers and deletes all data volumes. |
+| `pnpm installAll` | Installs all frontend (pnpm) and backend (composer) dependencies. |
+| `pnpm clear` | Clears the Symfony cache. |
+| `pnpm messenger` | Consumes the async Messenger queue. |
+| `pnpm clean-rooms` | Deletes stale game rooms (inactive >1h or created >48h ago). |
+| `pnpm back-test` | Runs the PHP test suite (PHPUnit). |
 
 ---
 
-## ⚙️ Configuration (`.env`)
+## ⚙️ Configuration
 
-The backend configuration is organized by bundle. Ensure your variables are defined **before** they are used in connection strings (like `DATABASE_URL`) so Docker parses them correctly.
+All backend configuration lives in `backend/.env`. Override locally with `backend/.env.local` (not committed).
 
-**Location:** `backend/.env`
-
-### 1. Database (Doctrine)
-We define the Postgres credentials here and use them immediately in the URL.
+### Database
 
 ```dotenv
-###> doctrine/doctrine-bundle ###
 POSTGRES_DB="connect4online"
 POSTGRES_USER="my_app_user"
 POSTGRES_PASSWORD="MySuperSecretPassword123"
-DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8"
-###< doctrine/doctrine-bundle ###
+POSTGRES_PORT=5433
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}?serverVersion=16&charset=utf8"
 ```
 
-### 2. Real-Time (Mercure)
-Configuration for both internal (Docker network) and public (Browser) access, plus the keys for the Hub.
+### Mercure (Real-time)
 
 ```dotenv
-###> symfony/mercure-bundle ###
-# Internal URL (Docker Service Name)
-MERCURE_URL="http://mercure/.well-known/mercure"
-# Public URL (Localhost + Port 9090)
+MERCURE_URL="http://127.0.0.1:9090/.well-known/mercure"
 MERCURE_PUBLIC_URL="http://127.0.0.1:9090/.well-known/mercure"
-# JWT Secrets
 MERCURE_JWT_SECRET="!ChangeThisMercureHubJWTSecretKey!"
-# Docker Variables for Publisher and Subscriber Keys
-MERCURE_PUBLISHER_JWT_KEY="RealPublisherKey"
-MERCURE_SUBSCRIBER_JWT_KEY="RealSubscriberKey"
-###< symfony/mercure-bundle ###
+MERCURE_PUBLISHER_JWT_KEY="${MERCURE_JWT_SECRET}"
+MERCURE_SUBSCRIBER_JWT_KEY="${MERCURE_JWT_SECRET}"
 ```
 
-### 3. Mailer (Mailpit)
-Configured to use the local Docker Mailpit service on port 1025.
+### Mailer
 
 ```dotenv
 MAILER_DSN="smtp://localhost:1025"
 ```
 
-### 4. Security & CORS
-JWT passphrase and CORS rules to allow the frontend to communicate with the API.
+### JWT & Security
 
 ```dotenv
+JWT_SECRET_KEY="%kernel.project_dir%/config/jwt/private.pem"
+JWT_PUBLIC_KEY="%kernel.project_dir%/config/jwt/public.pem"
 JWT_PASSPHRASE="MySuperSecretPassphraseChangeMe!"
 CORS_ALLOW_ORIGIN="^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$"
+```
+
+### Frontend (`frontend/.env`)
+
+```dotenv
+VITE_API_URL=http://127.0.0.1:8000
+VITE_MERCURE_URL=http://127.0.0.1:9090
+```
+
+---
+
+## 🔄 Stale Room Cleanup
+
+Game rooms are automatically cleaned up by the console command:
+
+```bash
+pnpm clean-rooms
+```
+
+Deletion rules:
+- **Inactive > 1 hour** — no move, join, or rematch activity
+- **Created > 48 hours ago** — regardless of activity
+
+Set up a cron to run automatically every 15 minutes:
+
+```
+*/15 * * * * cd /path/to/backend && php bin/console app:cleanup-stale-games >> /var/log/cleanup-games.log 2>&1
 ```
 
 ---
@@ -150,29 +212,43 @@ CORS_ALLOW_ORIGIN="^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$"
 ## 📅 Development Roadmap
 
 **Phase 1: Setup**
-- [x] Initialize Vite + React project
-- [x] Initialize Symfony 8.0 WebApp
-- [x] Configure Monorepo structure
+- [x] Vite + React + TypeScript project
+- [x] Symfony 8.0 backend
+- [x] Monorepo structure with unified pnpm scripts
+- [x] Docker infrastructure (Postgres, Mercure, Adminer, Mailpit)
 
-**Phase 2: Core Game Logic (Offline)**
-- [x] Pure JS Game Logic (Connect4 class)
-- [x] Win Detection Algorithm (Horizontal, Vertical, Diagonal)
-- [x] Draw Detection
+**Phase 2: Core Game Logic**
+- [x] Connect4 game class (pure TypeScript)
+- [x] Win detection (horizontal, vertical, diagonal)
+- [x] Draw detection
 
 **Phase 3: UI & UX**
-- [x] Cyberpunk / Neon Theme Implementation
-- [x] Responsive Game Board
-- [x] React Router Navigation (Menu, 1P, 2P)
-- [x] Asset Integration (Sounds, SVGs)
+- [x] Cyberpunk / Neon theme
+- [x] Responsive game board
+- [x] React Router navigation
+- [x] Sound effects (drop, win, loss, draw)
+- [x] Settings (theme, music, SFX, volume)
 
-**Phase 4: The Bot**
-- [x] Web Worker Architecture (Background Threads)
-- [x] Random Bot Implementation (Proof of Concept)
-- [ ] *Future: Minimax Algorithm*
+**Phase 4: AI Bot**
+- [x] Web Worker architecture (non-blocking background thread)
+- [x] Bot implementation
+- [ ] *Future: Minimax with alpha-beta pruning*
 
-**Phase 5: Backend & Infrastructure (Current)**
-- [x] Docker Infrastructure (Postgres, Mercure, Adminer)
-- [x] Database Configuration & User Entity
-- [x] JWT Authentication Setup
-- [ ] API Controllers (Auth, Game Creation)
-- [ ] Real-time Game Sync
+**Phase 5: Backend & Auth**
+- [x] User entity + registration
+- [x] Email verification (SymfonyCasts)
+- [x] JWT authentication + refresh tokens
+- [x] Password reset flow
+- [x] User settings persistence
+- [x] Avatar upload with validation + auto-resize
+
+**Phase 6: Online Multiplayer**
+- [x] Game entity + room code generation
+- [x] Create / join room endpoints
+- [x] Server-side move validation
+- [x] Win / draw / forfeit detection
+- [x] Real-time sync via Mercure SSE
+- [x] Rematch system (both players must accept)
+- [x] Score tracking across rematches
+- [x] Auto-redirect when opponent leaves (10s countdown)
+- [x] Stale room cleanup command
