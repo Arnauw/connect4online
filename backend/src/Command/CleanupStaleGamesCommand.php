@@ -22,12 +22,15 @@ class CleanupStaleGamesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $cutoff = new \DateTime('-1 hour');
+        $staleCutoff  = new \DateTime('-1 hour');
+        $ancientCutoff = new \DateTime('-48 hours');
 
         $games = $this->em->getRepository(Game::class)
             ->createQueryBuilder('g')
-            ->where('g.lastActivityAt < :cutoff')
-            ->setParameter('cutoff', $cutoff)
+            ->where('g.lastActivityAt < :staleCutoff')
+            ->orWhere('g.createdAt < :ancientCutoff')
+            ->setParameter('staleCutoff', $staleCutoff)
+            ->setParameter('ancientCutoff', $ancientCutoff)
             ->getQuery()
             ->getResult();
 
@@ -39,7 +42,7 @@ class CleanupStaleGamesCommand extends Command
 
         $this->em->flush();
 
-        $output->writeln("Deleted $count stale game(s) inactive for over 1 hour.");
+        $output->writeln("Deleted $count room(s) (inactive >1h or older than 48h).");
 
         return Command::SUCCESS;
     }
