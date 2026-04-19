@@ -87,7 +87,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // Default settings for new users/guests
-const defaultSettings: UserSettings = {theme: 'dark-neon', music: true, sfx: true, volume: 50};
+const defaultSettings: UserSettings = {theme: 'dark-neon', music: false, sfx: true, volume: 50};
 
 /**
  * AuthProvider Component

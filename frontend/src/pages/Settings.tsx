@@ -324,7 +324,7 @@ export const Settings = () => {
                     />
                     <NeonToggle
                         label="Background Music"
-                        checked={localSettings.music ?? true}
+                        checked={localSettings.music ?? false}
                         onChange={(val) => updateSetting('music', val)}
                     />
                     <NeonToggle

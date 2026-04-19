@@ -23,7 +23,7 @@ import { useAuth } from "../../context/AuthContext.tsx";
 export const AudioController = () => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const { settings } = useAuth();
-    const musicEnabled = settings.music ?? true;
+    const musicEnabled = settings.music ?? false;
     const volume = settings.volume ?? 50;
 
     useEffect(() => {
