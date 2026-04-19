@@ -60,7 +60,9 @@ class RegistrationController extends AbstractController
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface      $em,
         VerifyEmailHelperInterface  $verifyEmailHelper,
-        MailerInterface             $mailer
+        MailerInterface             $mailer,
+        #[Autowire(env: 'MAILER_REG_FROM_EMAIL')] string $fromEmail,
+        #[Autowire(env: 'MAILER_REG_FROM_NAME')]  string $fromName,
     ): JsonResponse
     {
         // Parse and validate JSON body
@@ -124,7 +126,7 @@ class RegistrationController extends AbstractController
 
         // Send verification email using Twig template
         $email = new TemplatedEmail()
-            ->from(new Address('me@arnaudrabel.com', 'Connect 4 Online Registration'))
+            ->from(new Address($fromEmail, $fromName))
             ->to($user->getEmail())
             ->subject('Initialize Account Sequence')
             ->htmlTemplate('emails/verify.html.twig')

@@ -169,7 +169,12 @@ MERCURE_SUBSCRIBER_JWT_KEY="${MERCURE_JWT_SECRET}"
 
 ```dotenv
 MAILER_DSN="smtp://localhost:1025"
+MAILER_FROM_EMAIL="no-reply@gmail.com"
+MAILER_FROM_NAME="Connect 4 Online"
+MAILER_REG_FROM_EMAIL="registration@gmail.com"
+MAILER_REG_FROM_NAME="Connect 4 Online Registration"
 ```
+
 
 ### JWT & Security
 

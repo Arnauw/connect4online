@@ -33,6 +33,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
@@ -46,7 +47,9 @@ class ResetPasswordController extends AbstractController
 
     public function __construct(
         private readonly ResetPasswordHelperInterface $resetPasswordHelper,
-        private readonly EntityManagerInterface       $entityManager
+        private readonly EntityManagerInterface       $entityManager,
+        #[Autowire(env: 'MAILER_FROM_EMAIL')] private readonly string $fromEmail,
+        #[Autowire(env: 'MAILER_FROM_NAME')]  private readonly string $fromName,
     ) {}
 
     /**
@@ -137,7 +140,11 @@ class ResetPasswordController extends AbstractController
      *
      * @throws TransportExceptionInterface if email delivery fails
      */
-    private function processSendingPasswordResetEmail(string $emailFormData, MailerInterface $mailer, TranslatorInterface $translator): JsonResponse
+    private function processSendingPasswordResetEmail(
+    string $emailFormData,
+    MailerInterface $mailer,
+    TranslatorInterface $translator,
+    ): JsonResponse
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy([
             'email' => $emailFormData,
@@ -159,7 +166,7 @@ class ResetPasswordController extends AbstractController
 
         // Send email with reset link containing the token
         $email = new TemplatedEmail()
-            ->from(new Address('no-reply@connect4online.com', 'Connect 4 Online'))
+            ->from(new Address($this->fromEmail, $this->fromName))
             ->to((string)$user->getEmail())
             ->subject('Your password reset request')
             ->htmlTemplate('emails/reset_password.html.twig')
