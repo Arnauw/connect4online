@@ -28,7 +28,7 @@ import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import { Avatar } from "./Avatar";
 import { useSoundEffect } from "../../hooks/useSoundEffect";
-import clickSfx from "../../assets/sfx/click.ogg";
+import clickSfx from "../../assets/sounds/sfx/click.ogg";
 
 interface UserProfile {
     username: string;

@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import bgmFile from "../../assets/musics/Grid of Lights.mp3";
+import bgmFile from "../../assets/sounds/musics/Grid_of_Lights.mp3";
 import { useAuth } from "../../context/AuthContext.tsx";
 
 export const AudioController = () => {

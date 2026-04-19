@@ -16,7 +16,7 @@
 
 import React from "react";
 import { useSoundEffect } from "../../hooks/useSoundEffect";
-import clickSfx from "../../assets/sfx/click.ogg";
+import clickSfx from "../../assets/sounds/sfx/click.ogg";
 
 type TopNavButtonProps = {
     label?: string;

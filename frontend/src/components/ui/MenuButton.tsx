@@ -19,7 +19,7 @@
 
 import type {ReactNode, MouseEvent} from "react";
 import {useSoundEffect} from "../../hooks/useSoundEffect";
-import clickSfx from "../../assets/sfx/click.ogg";
+import clickSfx from "../../assets/sounds/sfx/click.ogg";
 
 interface MenuButtonProps {
     children: ReactNode;

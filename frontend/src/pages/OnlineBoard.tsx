@@ -39,10 +39,10 @@ import {useAuth} from "../context/AuthContext";
 import {MenuButton} from "../components/ui/MenuButton";
 import {useSoundEffect} from "../hooks/useSoundEffect";
 import {Avatar} from "../components/ui/Avatar";
-import dropSfx from "../assets/sfx/drop.ogg";
-import winSfx from "../assets/sfx/victory.mp3";
-import loseSfx from "../assets/sfx/loss.mp3";
-import drawSfx from "../assets/sfx/draw.mp3";
+import dropSfx from "../assets/sounds/sfx/drop.ogg";
+import winSfx from "../assets/sounds/sfx/victory.mp3";
+import loseSfx from "../assets/sounds/sfx/loss.mp3";
+import drawSfx from "../assets/sounds/sfx/draw.mp3";
 
 import type { Cell } from "../logic/Connect4";
 import { BoardUI } from "../components/game/BoardUI";
