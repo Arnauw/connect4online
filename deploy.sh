@@ -38,6 +38,14 @@ APP_ENV=prod php bin/console lexik:jwt:generate-keypair --skip-if-exists
 # Clear up the Production Cache
 echo "Clearing Symfony production cache..."
 APP_ENV=prod php bin/console cache:clear
+
+# Restart the Messenger worker so it picks up the new code
+echo "Stopping existing Messenger workers..."
+APP_ENV=prod php bin/console messenger:stop-workers
+
+echo "Starting Messenger worker in background..."
+nohup APP_ENV=prod php bin/console messenger:consume async -vv >> /var/log/messenger-worker.log 2>&1 &
+
 cd ..
 
 # Secure Permissions
