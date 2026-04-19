@@ -12,7 +12,7 @@
  * - checkDraw: empty board vs full top row
  */
 
-namespace App\Tests\Service;
+namespace App\Tests\Unit;
 
 use App\Service\GameEngine;
 use PHPUnit\Framework\TestCase;

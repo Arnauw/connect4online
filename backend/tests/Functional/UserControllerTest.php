@@ -12,7 +12,7 @@
  * - DELETE /api/me: account removed from database
  */
 
-namespace App\Tests\Controller;
+namespace App\Tests\Functional;
 
 use App\Entity\User;
 use App\Repository\UserRepository;

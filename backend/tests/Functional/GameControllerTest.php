@@ -20,7 +20,7 @@
  * - GET game state: own game vs outsider
  */
 
-namespace App\Tests\Controller;
+namespace App\Tests\Functional;
 
 use App\Entity\Game;
 use App\Entity\User;
@@ -29,6 +29,12 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class GameControllerTest extends WebTestCase
 {
+    /** Generate a real JWT token for a user so sequential auth switches work on the same client. */
+    private function getToken(User $user): string
+    {
+        return static::getContainer()->get('lexik_jwt_authentication.jwt_manager')->create($user);
+    }
+
     /** Create and persist a minimal User entity for use in tests. */
     private function createUser(EntityManagerInterface $em, string $email, string $username): User
     {
@@ -421,8 +427,9 @@ class GameControllerTest extends WebTestCase
         $client->request('POST', '/api/game/BOTH/leave');
         self::assertResponseIsSuccessful();
 
-        $client->loginUser($player2);
-        $client->request('POST', '/api/game/BOTH/leave');
+        $client->request('POST', '/api/game/BOTH/leave', [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $this->getToken($player2),
+        ]);
         self::assertResponseIsSuccessful();
 
         $em->clear();
@@ -470,11 +477,13 @@ class GameControllerTest extends WebTestCase
         self::assertSame('FINISHED', $game->getStatus());
 
         // P2 accepts — both agree → game restarts
-        $client->loginUser($player2);
-        $client->request('POST', '/api/game/RMAT/rematch');
+        $client->request('POST', '/api/game/RMAT/rematch', [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $this->getToken($player2),
+        ]);
         self::assertResponseIsSuccessful();
 
-        $em->refresh($game);
+        $em->clear();
+        $game = $em->getRepository(Game::class)->findOneBy(['roomCode' => 'RMAT']);
         self::assertSame('PLAYING', $game->getStatus());
         self::assertFalse($game->isP1WantsRematch());
         self::assertFalse($game->isP2WantsRematch());

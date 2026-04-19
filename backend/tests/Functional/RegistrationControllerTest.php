@@ -11,7 +11,7 @@
  * - Invalid username format (too short, special chars) → 400
  */
 
-namespace App\Tests\Controller;
+namespace App\Tests\Functional;
 
 use App\Entity\User;
 use App\Repository\UserRepository;

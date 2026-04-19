@@ -15,7 +15,7 @@
  * from earlier runs (test DB is rolled back by DAMA, but starting clean is safer).
  */
 
-namespace App\Tests;
+namespace App\Tests\Functional;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
@@ -88,7 +88,7 @@ class ResetPasswordControllerTest extends WebTestCase
         // Step 2: use the token to set a new password
         $this->client->request('POST', '/api/reset-password/reset', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
             'token'    => $token,
-            'password' => 'newStrongPassword'
+            'password' => 'NewStrongPassword1'
         ]));
 
         self::assertResponseIsSuccessful();
@@ -99,6 +99,6 @@ class ResetPasswordControllerTest extends WebTestCase
 
         /** @var UserPasswordHasherInterface $passwordHasher */
         $passwordHasher = static::getContainer()->get(UserPasswordHasherInterface::class);
-        self::assertTrue($passwordHasher->isPasswordValid($updatedUser, 'newStrongPassword'));
+        self::assertTrue($passwordHasher->isPasswordValid($updatedUser, 'NewStrongPassword1'));
     }
 }

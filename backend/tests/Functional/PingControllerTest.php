@@ -9,7 +9,7 @@
  * This test requires the Mercure Hub to be running (pnpm docker).
  */
 
-namespace App\Tests\Controller;
+namespace App\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
