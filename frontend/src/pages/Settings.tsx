@@ -341,7 +341,7 @@ export const Settings = () => {
                         <div className="flex flex-col">
                             <span className="text-slate-300 font-bold uppercase text-sm">Theme</span>
                             <span className="text-[10px] text-slate-500 italic mt-1">
-                                More themes incoming via OTA update...
+                                More themes coming later...
                             </span>
                         </div>
                         <span className="text-cyan-400 font-mono text-sm border border-cyan-500/30 px-3 py-1 rounded">
