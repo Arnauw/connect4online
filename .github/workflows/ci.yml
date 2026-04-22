@@ -15,7 +15,7 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: connect4online_test
+          POSTGRES_DB: connect4online
           POSTGRES_USER: app
           POSTGRES_PASSWORD: password
         ports:
@@ -33,7 +33,7 @@ jobs:
     env:
       APP_ENV: test
       APP_SECRET: ci-test-secret-key-not-for-production
-      DATABASE_URL: postgresql://app:password@localhost:5432/connect4online_test?serverVersion=16&charset=utf8
+      DATABASE_URL: postgresql://app:password@localhost:5432/connect4online?serverVersion=16&charset=utf8
       JWT_PASSPHRASE: ci-test-passphrase
       MERCURE_JWT_SECRET: ci-test-mercure-secret
       MAILER_DSN: "null://null"
@@ -65,7 +65,9 @@ jobs:
           php bin/console lexik:jwt:generate-keypair --skip-if-exists
 
       - name: Run migrations
-        run: php bin/console doctrine:migrations:migrate --no-interaction
+        run: |
+          php bin/console doctrine:database:create --if-not-exists
+          php bin/console doctrine:migrations:migrate --no-interaction
 
       - name: Run PHPUnit
         run: php bin/phpunit --exclude-group mercure
