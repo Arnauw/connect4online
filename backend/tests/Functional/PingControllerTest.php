@@ -11,8 +11,10 @@
 
 namespace App\Tests\Functional;
 
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
+#[Group('mercure')]
 class PingControllerTest extends WebTestCase
 {
     /** A POST to /api/ping must return 200 with a status message and a Mercure event id. */

@@ -25,8 +25,10 @@ namespace App\Tests\Functional;
 use App\Entity\Game;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
+#[Group('mercure')]
 class GameControllerTest extends WebTestCase
 {
     /** Generate a real JWT token for a user so sequential auth switches work on the same client. */

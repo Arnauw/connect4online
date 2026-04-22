@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  phpunit:
+    name: PHPUnit
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: connect4online_test
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      APP_ENV: test
+      APP_SECRET: ci-test-secret-key-not-for-production
+      DATABASE_URL: postgresql://app:password@localhost:5432/connect4online_test?serverVersion=16&charset=utf8
+      JWT_PASSPHRASE: ci-test-passphrase
+      MERCURE_JWT_SECRET: ci-test-mercure-secret
+      MAILER_DSN: "null://null"
+      MESSENGER_TRANSPORT_DSN: "sync://"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: ctype, gd, iconv, intl, mbstring, pdo, pdo_pgsql
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-scripts --prefer-dist
+
+      - name: Generate JWT keypair
+        run: |
+          mkdir -p config/jwt
+          php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
+      - name: Run migrations
+        run: php bin/console doctrine:migrations:migrate --no-interaction
+
+      - name: Run PHPUnit
+        run: php bin/phpunit --exclude-group mercure
