@@ -13,7 +13,7 @@
  * - Worker responds with: column index (0-6) for the bot's move
  */
 
-import type { Cell, ColumnIndex } from "../logic/Connect4";
+import type { Cell } from "../logic/Connect4";
 
 /**
  * Structure of the request sent from the main thread to the worker
@@ -49,7 +49,7 @@ self.onmessage = (e: MessageEvent<BotRequest>) => {
  * @param player - Which player the bot is (1 or 2)
  * @returns Column index (0-6) where the bot wants to drop its piece, or -1 if no valid moves
  */
-function computeBestMove(board: Cell[][], player: 1 | 2): number {
+function computeBestMove(board: Cell[][], _player: 1 | 2): number {
     // Find all columns that aren't full (top row has empty space)
     const validColumns: number[] = [];
 
