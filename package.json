@@ -6,7 +6,7 @@
   "scripts": {
     "all": "pnpm docker && pnpm both",
     "docker": "cd backend && docker compose --env-file .env.local up -d",
-    "dockerS": "cd backend && docker compose down",
+    "dockerStop": "cd backend && docker compose down",
     "dockerDel": "cd backend && docker compose down -v",
     "both": "concurrently \"pnpm --filter frontend dev\" \"cd backend && symfony serve --no-tls\"",
     "front": "cd frontend && pnpm dev",

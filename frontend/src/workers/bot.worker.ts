@@ -48,11 +48,12 @@ self.onmessage = (e: MessageEvent<BotRequest>) => {
  * @returns Column index (0-6) where the bot wants to drop its piece, or -1 if no valid moves
  */
 function computeBestMove(board: Cell[][]): number {
-    // Find all columns that aren't full (top row has empty space)
+    // Find all columns that are not full (top row has empty space)
     const validColumns: number[] = [];
 
     for (let col = 0; col < 7; col++) {
-        if (board[0][col] === 0) {  // Check if top cell of column is empty
+        // Check if top cell of column is empty (board[0][...] is the top row)
+        if (board[0][col] === 0) {
             validColumns.push(col);
         }
     }
