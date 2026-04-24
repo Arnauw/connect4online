@@ -51,9 +51,9 @@ function computeBestMove(board: Cell[][]): number {
     // Find all columns that aren't full (top row has empty space)
     const validColumns: number[] = [];
 
-    for (let c = 0; c < 7; c++) {
-        if (board[0][c] === 0) {  // Check if top cell of column is empty
-            validColumns.push(c);
+    for (let col = 0; col < 7; col++) {
+        if (board[0][col] === 0) {  // Check if top cell of column is empty
+            validColumns.push(col);
         }
     }
 
@@ -61,7 +61,6 @@ function computeBestMove(board: Cell[][]): number {
     if (validColumns.length === 0) return -1;
 
     // Pick a random valid column
-    // TODO: Implement smarter AI algorithm based on difficulty level
     const randomIndex = Math.floor(Math.random() * validColumns.length);
     return validColumns[randomIndex];
 }
