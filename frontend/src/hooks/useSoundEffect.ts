@@ -2,9 +2,8 @@
  * useSoundEffect Hook
  *
  * Custom React hook for playing sound effects with user preferences.
- * Respects user settings for:
- * - SFX on/off toggle
- * - Volume level (0-100)
+ * Reads settings directly from the JWT user object — guest settings are not applied.
+ * (Known limitation: guests who change SFX/volume will not have those settings respected here)
  *
  * Usage:
  * const playSound = useSoundEffect();
@@ -16,15 +15,16 @@ import { useAuth } from "../context/AuthContext";
 
 /**
  * Hook that returns a function to play sound effects
- * Automatically checks user settings before playing
+ * Checks logged-in user settings before playing (defaults apply when not logged in)
  *
  * @returns playSound function that accepts an audio file path
  */
 export const useSoundEffect = () => {
-    // Get user settings from authentication context
+    // Reads directly from JWT user object — bypasses the merged `settings` object in AuthContext
+    // so guest settings changes are not reflected here
     const { user } = useAuth();
 
-    // Extract SFX settings with defaults if not set
+    // Falls back to defaults when no user is logged in (guest)
     const sfxEnabled = user?.settings?.sfx ?? true;   // Default: SFX enabled
     const volume = user?.settings?.volume ?? 50;      // Default: 50% volume
 

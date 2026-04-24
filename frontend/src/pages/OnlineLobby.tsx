@@ -6,7 +6,7 @@
  * UI states (MenuMode):
  * - "select": Initial screen with "Host New Match" and "Join via Code" buttons
  * - "host":   Waiting screen showing the room code + spinner, listening for opponent via Mercure
- * - "join":   Text input screen where opponent types the 6-digit room code
+ * - "join":   Text input screen where opponent types the 6-character room code
  *
  * Host flow:
  * 1. POST /api/game/create → backend returns a 6-char room code

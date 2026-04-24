@@ -26,7 +26,7 @@ import {Profile} from "./pages/Profile.tsx";
 import {ForgotPassword} from "./pages/ForgotPassword.tsx";
 import {ResetPassword} from "./pages/ResetPassword.tsx";
 import {Settings} from "./pages/Settings.tsx";
-import {ProtectedRoute} from "./components/layout/ProtectedRoute.tsx";
+import {ProtectedRoute} from "./components/auth/ProtectedRoute.tsx";
 import {OnlineGame} from "./pages/OnlineGame.tsx";
 import {PrivacyPolicy} from "./pages/PrivacyPolicy.tsx";
 

@@ -1,5 +1,5 @@
 /**
- * OnlineBoard Page
+ * OnlineBoard Component
  *
  * The active online game screen. Handles real-time multiplayer via Mercure SSE.
  *
@@ -21,7 +21,6 @@
  * - `/leave` is NEVER called automatically on unmount to avoid false forfeits
  *   (e.g. navigating to Settings and returning shouldn't count as leaving)
  * - `/leave` is ONLY called when the user explicitly confirms via the warning modal
- * - statusRef tracks current status without stale closures in effects
  *
  * Rematch button:
  * - Hidden if opponent has left (they can't accept it anyway)
@@ -80,9 +79,6 @@ export const OnlineBoard = () => {
     const endGameAudioRef = useRef<HTMLAudioElement | null>(null);
     const hasPlayedEndSoundRef = useRef<boolean>(false);
 
-    // statusRef keeps a mutable copy of `status` for use in effects without stale closures
-    const statusRef = useRef<string>("WAITING");
-
     // EFFECT 1: Fetch initial game state from backend
     useEffect(() => {
         const fetchGame = async () => {
@@ -122,13 +118,7 @@ export const OnlineBoard = () => {
         fetchGame();
     }, [roomCode, navigate, setActiveGameStatus]);
 
-    // EFFECT 2: Keep statusRef synchronized with `status` state
-    // This lets the Mercure effect read current status without a stale closure
-    useEffect(() => {
-        statusRef.current = status;
-    }, [status]);
-
-    // EFFECT 3: Cleanup on unmount — only clears activeGameStatus (does NOT call /leave)
+    // EFFECT 2: Cleanup on unmount — only clears activeGameStatus (does NOT call /leave)
     // We intentionally do NOT call /leave here to avoid false forfeits when navigating
     // to Settings, Profile, or refreshing the page mid-game
     useEffect(() => {
@@ -138,7 +128,7 @@ export const OnlineBoard = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // EFFECT 4: Mercure SSE — real-time game updates
+    // EFFECT 3: Mercure SSE — real-time game updates
     useEffect(() => {
         if (!roomCode) return;
 
@@ -221,7 +211,7 @@ export const OnlineBoard = () => {
         return () => eventSource.close();
     }, [roomCode, playSound, setActiveGameStatus, setActiveRoom, myPlayerNum]);
 
-    // EFFECT 5: Play end-game sound when game ends (once per game)
+    // EFFECT 4: Play end-game sound when game ends (once per game)
     useEffect(() => {
         if (status !== 'FINISHED' || isLeaving || hasPlayedEndSoundRef.current) return;
 
@@ -254,7 +244,7 @@ export const OnlineBoard = () => {
         };
     }, [status, winnerId, user?.id, isLeaving, settings.sfx, settings.volume]);
 
-    // EFFECT 6: Countdown auto-leave — ticks every second after opponent leaves
+    // EFFECT 5: Countdown auto-leave — ticks every second after opponent leaves
     useEffect(() => {
         if (countdown === null) return;
         if (countdown === 0) {

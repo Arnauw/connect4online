@@ -6,7 +6,7 @@
  *
  * Used in App.tsx to protect routes like /profile.
  * Any user who is not logged in and tries to access a protected route
- * will be redirected to /login with the current URL preserved via `replace`.
+ * will be redirected to /login (the original destination URL is not preserved).
  */
 
 import { Navigate, Outlet } from "react-router-dom";

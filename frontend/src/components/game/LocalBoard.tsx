@@ -93,7 +93,7 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
     };
 
     // Spawn the bot Web Worker on mount, terminate on unmount
-    // Worker runs the minimax AI on a separate thread so the UI stays responsive
+    // Worker runs the bot AI on a separate thread so the UI stays responsive
     useEffect(() => {
         workerRef.current = new Worker(
             new URL('../../workers/bot.worker.ts', import.meta.url),
@@ -114,7 +114,8 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
 
         hasPlayedEndSoundRef.current = true;
 
-        // Player 1 = human; Player 2 = bot. Winning = victory, losing = loss, tie = draw
+        // Sound plays from Player 1's perspective in both 1P and 2P modes
+        // (in 2P mode, Player 2 winning still triggers the "loss" sound)
         let soundFile: string;
         if (winner === 1) {
             soundFile = winSfx;
@@ -180,7 +181,6 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
 
             workerRef.current.postMessage({
                 board: game.board,
-                player: 2
             });
         }
     }, [currentPlayer]);

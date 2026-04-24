@@ -48,7 +48,7 @@ interface JwtPayload {
     username: string;        // User's display name
     email: string;           // User's email address
     elo: number;             // User's ELO rating (for online play)
-    avatar?: string;         // Avatar code (e.g., "🎮", "👾", "🤖")
+    avatar?: string;         // Avatar filename (e.g., "default-avatar.jpg") or upload path
     settings?: UserSettings; // User's saved settings
     exp: number;             // Token expiration timestamp (Unix time in seconds)
 }
@@ -67,7 +67,7 @@ interface AuthContextType {
     logout: () => void;                                  // Logout and clear all data
     updateUser: (newData: Partial<JwtPayload>) => void;  // Update user data (e.g., after profile edit)
     updateGuestSettings: (newSettings: UserSettings) => void;  // Update guest settings
-    activeGameStatus: string | null;                     // Current online game status (PLAYING/FINISHED)
+    activeGameStatus: string | null;                     // Current online game status (WAITING/PLAYING/FINISHED)
     setActiveGameStatus: (status: string | null) => void;  // Update game status
 }
 

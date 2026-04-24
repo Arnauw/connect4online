@@ -19,7 +19,7 @@
  *
  * Danger Zone:
  * - Two-step confirmation: "Danger Zone" link → modal → DeleteAccountModal
- * - Calls DELETE /api/me → backend deletes user + avatar file → frontend logs out
+ * - Calls DELETE /api/me → backend deletes user + avatar file → removes token from localStorage and reloads page
  *
  * Avatar URL resolution (getAvatarSrc):
  * - null/default → no image (fallback SVG used in Avatar component)
