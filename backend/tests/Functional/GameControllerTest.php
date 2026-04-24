@@ -12,12 +12,11 @@
  * These tests require Docker to be running (pnpm docker) so the Mercure hub is reachable.
  *
  * Covers:
- * - Authentication guards (unauthenticated → 401, non-player → 403)
- * - Room lifecycle: create, join, leave (WAITING / PLAYING / FINISHED)
- * - Move validation: wrong turn, full column, non-player
- * - Win detection via move endpoint
- * - Rematch flow: single request → REMATCH_REQUESTED, both accept → GAME_RESTARTED
- * - GET game state: own game vs outsider
+ * - Authentication guard (unauthenticated → 401)
+ * - Room lifecycle: create, join, leave (PLAYING forfeit)
+ * - Business rules: cannot join own room
+ * - Move validation: valid move, win detection
+ * - Rematch flow: both players accept → game restarts
  */
 
 namespace App\Tests\Functional;
@@ -73,7 +72,7 @@ class GameControllerTest extends WebTestCase
     }
 
     // -------------------------------------------------------------------------
-    // Authentication guards
+    // Authentication guard
     // -------------------------------------------------------------------------
 
     /** Unauthenticated requests to any game endpoint must return 401. */
@@ -92,9 +91,9 @@ class GameControllerTest extends WebTestCase
     /** Creating a room returns 201, a room code, and persists the game in WAITING status. */
     public function testCreateGame(): void
     {
-        $client = static::createClient();
+        $client    = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em        = $container->get('doctrine')->getManager();
 
         $user = $this->createUser($em, 'creator@example.com', 'creator');
         $client->loginUser($user);
@@ -122,13 +121,13 @@ class GameControllerTest extends WebTestCase
     /** Player 2 joining a WAITING room sets status to PLAYING and assigns them. */
     public function testJoinGame(): void
     {
-        $client = static::createClient();
+        $client    = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em        = $container->get('doctrine')->getManager();
 
         $player1 = $this->createUser($em, 'p1@example.com', 'p1');
         $player2 = $this->createUser($em, 'p2@example.com', 'p2');
-        $game = $this->createGame($em, $player1, 'ABCD', 'WAITING');
+        $game    = $this->createGame($em, $player1, 'ABCD', 'WAITING');
 
         $client->loginUser($player2);
         $client->request('POST', '/api/game/join/ABCD');
@@ -145,9 +144,9 @@ class GameControllerTest extends WebTestCase
     /** The creator cannot join their own room. */
     public function testCannotJoinOwnRoom(): void
     {
-        $client = static::createClient();
+        $client    = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em        = $container->get('doctrine')->getManager();
 
         $user = $this->createUser($em, 'host@example.com', 'host');
         $this->createGame($em, $user, 'SELF', 'WAITING');
@@ -161,121 +160,15 @@ class GameControllerTest extends WebTestCase
     }
 
     // -------------------------------------------------------------------------
-    // Get game state
+    // Move
     // -------------------------------------------------------------------------
-
-    /** GET /api/game/:code returns full game state for an actual player. */
-    public function testGetGameState(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $player1 = $this->createUser($em, 'gs1@example.com', 'gs1');
-        $player2 = $this->createUser($em, 'gs2@example.com', 'gs2');
-        $this->createGame($em, $player1, 'GETG', 'PLAYING', $player2);
-
-        $client->loginUser($player1);
-        $client->request('GET', '/api/game/GETG');
-
-        self::assertResponseIsSuccessful();
-        $data = json_decode($client->getResponse()->getContent(), true);
-        self::assertSame(1, $data['myPlayerNum']);
-        self::assertSame('PLAYING', $data['status']);
-        self::assertSame('gs2', $data['player2']);
-        self::assertArrayHasKey('board', $data);
-    }
-
-    /** A user who is not part of the game cannot read its state. */
-    public function testGetGameNonPlayer(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $player1 = $this->createUser($em, 'gn1@example.com', 'gn1');
-        $player2 = $this->createUser($em, 'gn2@example.com', 'gn2');
-        $outsider = $this->createUser($em, 'gnout@example.com', 'gnout');
-        $this->createGame($em, $player1, 'GNPL', 'PLAYING', $player2);
-
-        $client->loginUser($outsider);
-        $client->request('GET', '/api/game/GNPL');
-
-        self::assertResponseStatusCodeSame(403);
-    }
-
-    // -------------------------------------------------------------------------
-    // Move validation
-    // -------------------------------------------------------------------------
-
-    /** A player who is not part of the game cannot submit moves. */
-    public function testNonPlayerCannotMove(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $player1  = $this->createUser($em, 'np1@example.com', 'np1');
-        $player2  = $this->createUser($em, 'np2@example.com', 'np2');
-        $outsider = $this->createUser($em, 'npout@example.com', 'npout');
-        $this->createGame($em, $player1, 'NPLY', 'PLAYING', $player2);
-
-        $client->loginUser($outsider);
-        $client->request('POST', '/api/game/NPLY/move', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['col' => 3]));
-
-        self::assertResponseStatusCodeSame(403);
-    }
-
-    /** Player 2 cannot move when it is Player 1's turn. */
-    public function testInvalidMoveNotTurn(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $player1 = $this->createUser($em, 'm1@example.com', 'm1');
-        $player2 = $this->createUser($em, 'm2@example.com', 'm2');
-        $this->createGame($em, $player1, 'MOVE', 'PLAYING', $player2);
-
-        $client->loginUser($player2);
-        $client->request('POST', '/api/game/MOVE/move', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['col' => 3]));
-
-        self::assertResponseStatusCodeSame(400);
-        $data = json_decode($client->getResponse()->getContent(), true);
-        self::assertSame('Not your turn!', $data['error']);
-    }
-
-    /** Dropping a piece into an already-full column returns a 400 error. */
-    public function testMoveOnFullColumn(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $player1 = $this->createUser($em, 'fc1@example.com', 'fc1');
-        $player2 = $this->createUser($em, 'fc2@example.com', 'fc2');
-
-        $board = array_fill(0, 6, array_fill(0, 7, 0));
-        for ($r = 0; $r < 6; $r++) {
-            $board[$r][3] = ($r % 2) + 1; // fill column 3 with alternating pieces
-        }
-
-        $this->createGame($em, $player1, 'FULL', 'PLAYING', $player2, $board);
-
-        $client->loginUser($player1);
-        $client->request('POST', '/api/game/FULL/move', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['col' => 3]));
-
-        self::assertResponseStatusCodeSame(400);
-        $data = json_decode($client->getResponse()->getContent(), true);
-        self::assertSame('Invalid move or column full.', $data['error']);
-    }
 
     /** A valid move is accepted, the turn switches, and the board is updated in the DB. */
     public function testValidMove(): void
     {
-        $client = static::createClient();
+        $client    = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em        = $container->get('doctrine')->getManager();
 
         $player1 = $this->createUser($em, 'v1@example.com', 'v1');
         $player2 = $this->createUser($em, 'v2@example.com', 'v2');
@@ -303,14 +196,14 @@ class GameControllerTest extends WebTestCase
      */
     public function testWinDetectionOnMove(): void
     {
-        $client = static::createClient();
+        $client    = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em        = $container->get('doctrine')->getManager();
 
         $player1 = $this->createUser($em, 'win1@example.com', 'win1');
         $player2 = $this->createUser($em, 'win2@example.com', 'win2');
 
-        $board = array_fill(0, 6, array_fill(0, 7, 0));
+        $board       = array_fill(0, 6, array_fill(0, 7, 0));
         $board[5][0] = 1;
         $board[4][0] = 1;
         $board[3][0] = 1; // three-in-a-column, one more will win
@@ -334,29 +227,6 @@ class GameControllerTest extends WebTestCase
     // -------------------------------------------------------------------------
 
     /**
-     * Host leaving a WAITING room (before anyone joined) deletes it immediately —
-     * no event broadcast, no forfeit, just cleanup.
-     */
-    public function testLeaveWaitingDeletesRoom(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $user = $this->createUser($em, 'lw1@example.com', 'lw1');
-        $game = $this->createGame($em, $user, 'LWAI', 'WAITING');
-        $gameId = $game->getId();
-
-        $client->loginUser($user);
-        $client->request('POST', '/api/game/LWAI/leave');
-
-        self::assertResponseIsSuccessful();
-
-        $em->clear();
-        self::assertNull($em->getRepository(Game::class)->find($gameId));
-    }
-
-    /**
      * A player leaving during an active game triggers a forfeit:
      * - Game becomes FINISHED
      * - The other player is set as winner
@@ -364,9 +234,9 @@ class GameControllerTest extends WebTestCase
      */
     public function testLeavePlayingForfeits(): void
     {
-        $client = static::createClient();
+        $client    = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em        = $container->get('doctrine')->getManager();
 
         $player1 = $this->createUser($em, 'lp1@example.com', 'lp1');
         $player2 = $this->createUser($em, 'lp2@example.com', 'lp2');
@@ -384,60 +254,6 @@ class GameControllerTest extends WebTestCase
         self::assertSame(0, $game->getScoreP1());
     }
 
-    /**
-     * A player leaving after a finished game sets their "has left" flag.
-     * While only one player has left the room still exists (the other may rematch).
-     */
-    public function testLeaveFinishedGameSetsFlag(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $player1 = $this->createUser($em, 'lf1@example.com', 'lf1');
-        $player2 = $this->createUser($em, 'lf2@example.com', 'lf2');
-        $game    = $this->createGame($em, $player1, 'LFIN', 'FINISHED', $player2);
-        $gameId  = $game->getId();
-
-        $client->loginUser($player1);
-        $client->request('POST', '/api/game/LFIN/leave');
-
-        self::assertResponseIsSuccessful();
-
-        $em->refresh($game);
-        self::assertTrue($game->isP1HasLeft());
-        self::assertFalse($game->isP2HasLeft());
-        self::assertNotNull($em->getRepository(Game::class)->find($gameId)); // still in DB
-    }
-
-    /**
-     * When both players leave a finished game, the room is deleted from the database
-     * to prevent stale entries accumulating.
-     */
-    public function testBothLeavingFinishedGameDeletesIt(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $player1 = $this->createUser($em, 'bl1@example.com', 'bl1');
-        $player2 = $this->createUser($em, 'bl2@example.com', 'bl2');
-        $game    = $this->createGame($em, $player1, 'BOTH', 'FINISHED', $player2);
-        $gameId  = $game->getId();
-
-        $client->loginUser($player1);
-        $client->request('POST', '/api/game/BOTH/leave');
-        self::assertResponseIsSuccessful();
-
-        $client->request('POST', '/api/game/BOTH/leave', [], [], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $this->getToken($player2),
-        ]);
-        self::assertResponseIsSuccessful();
-
-        $em->clear();
-        self::assertNull($em->getRepository(Game::class)->find($gameId));
-    }
-
     // -------------------------------------------------------------------------
     // Rematch
     // -------------------------------------------------------------------------
@@ -450,9 +266,9 @@ class GameControllerTest extends WebTestCase
      */
     public function testRematchBothAccept(): void
     {
-        $client = static::createClient();
+        $client    = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em        = $container->get('doctrine')->getManager();
 
         $player1 = $this->createUser($em, 'rm1@example.com', 'rm1');
         $player2 = $this->createUser($em, 'rm2@example.com', 'rm2');

@@ -46,10 +46,11 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-
-        return config;  // Proceed with the request
+        // Proceed with the request
+        return config;
     },
-    (error) => Promise.reject(error)  // Handle request errors
+    // Handle request errors
+    (error) => Promise.reject(error)
 );
 
 /**
