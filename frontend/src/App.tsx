@@ -27,7 +27,7 @@ import {ForgotPassword} from "./pages/ForgotPassword.tsx";
 import {ResetPassword} from "./pages/ResetPassword.tsx";
 import {Settings} from "./pages/Settings.tsx";
 import {ProtectedRoute} from "./components/layout/ProtectedRoute.tsx";
-import {OnlineBoard} from "./pages/OnlineBoard.tsx";
+import {OnlineGame} from "./pages/OnlineGame.tsx";
 import {PrivacyPolicy} from "./pages/PrivacyPolicy.tsx";
 
 /** Wraps all routes in the shared PageLayout (background image, audio, nav badge) */
@@ -73,7 +73,7 @@ function App() {
                         <Route path="/local1p" element={<LocalGame1P/>}/>
                         <Route path="/local2p" element={<LocalGame2P/>}/>
                         <Route path="/online" element={<OnlineLobby/>}/>
-                        <Route path="/online/:roomCode" element={<OnlineBoard/>} />
+                        <Route path="/online/:roomCode" element={<OnlineGame/>} />
                         <Route path="/login" element={<Login/>}/>
                         <Route path="/register" element={<Register/>}/>
                         <Route path="/forgot-password" element={<ForgotPassword/>}/>
