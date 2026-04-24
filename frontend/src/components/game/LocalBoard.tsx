@@ -25,16 +25,16 @@
 
 import {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
-import {type Cell, type ColumnIndex, Connect4, type Player} from "../logic/Connect4.ts";
-import {MenuButton} from "../components/ui/MenuButton.tsx";
-import {useSoundEffect} from "../hooks/useSoundEffect";
-import dropSfx from "../assets/sounds/sfx/drop.ogg";
-import winSfx from "../assets/sounds/sfx/victory.mp3";
-import loseSfx from "../assets/sounds/sfx/loss.mp3";
-import drawSfx from "../assets/sounds/sfx/draw.mp3";
-import {useAuth} from "../context/AuthContext.tsx";
-import {BoardUI} from "../components/game/BoardUI.tsx";
-import {TopNavButton} from "../components/ui/TopNavButton.tsx";
+import {type Cell, type ColumnIndex, Connect4, type Player} from "../../logic/Connect4.ts";
+import {MenuButton} from "../ui/MenuButton.tsx";
+import {useSoundEffect} from "../../hooks/useSoundEffect";
+import dropSfx from "../../assets/sounds/sfx/drop.ogg";
+import winSfx from "../../assets/sounds/sfx/victory.mp3";
+import loseSfx from "../../assets/sounds/sfx/loss.mp3";
+import drawSfx from "../../assets/sounds/sfx/draw.mp3";
+import {useAuth} from "../../context/AuthContext.tsx";
+import {BoardUI} from "./BoardUI.tsx";
+import {TopNavButton} from "../ui/TopNavButton.tsx";
 
 type LocalBoardProps = {
     title?: string;
@@ -94,7 +94,7 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
     // Worker runs the minimax AI on a separate thread so the UI stays responsive
     useEffect(() => {
         workerRef.current = new Worker(
-            new URL('../workers/bot.worker.ts', import.meta.url),
+            new URL('../../workers/bot.worker.ts', import.meta.url),
             {type: 'module'},
         );
 
