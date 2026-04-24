@@ -6,7 +6,7 @@
  * - vsBot: When true, Player 2's moves are handled by the Web Worker AI
  *
  * State persistence:
- * - Game state is saved to localStorage via AuthContext so it survives page refresh
+ * - Game state is saved to localStorage via LocalGameContext so it survives page refresh
  * - On mount, the saved game is restored if the mode (vsBot flag) matches
  *
  * Bot integration:
@@ -33,6 +33,7 @@ import winSfx from "../../assets/sounds/sfx/victory.mp3";
 import loseSfx from "../../assets/sounds/sfx/loss.mp3";
 import drawSfx from "../../assets/sounds/sfx/draw.mp3";
 import {useAuth} from "../../context/AuthContext.tsx";
+import {useLocalGame} from "../../context/LocalGameContext.tsx";
 import {BoardUI} from "./BoardUI.tsx";
 import {TopNavButton} from "../ui/TopNavButton.tsx";
 
@@ -42,7 +43,8 @@ type LocalBoardProps = {
 };
 
 export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
-    const { localGameData, setLocalGameData, setActiveGameStatus, settings } = useAuth();
+    const { setActiveGameStatus, settings } = useAuth();
+    const { localGameData, setLocalGameData } = useLocalGame();
 
     // Restore saved game from localStorage if it matches the current mode, else start fresh
     const [game, setGame] = useState<Connect4>(() => {
@@ -79,7 +81,7 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
         }
     }, []); // Empty deps — only run once on mount
 
-    // Persist every game state change to localStorage so refreshing doesn't lose progress
+    // Push game state to LocalGameContext on every change (which persists it to localStorage)
     useEffect(() => {
         setLocalGameData({ game, score, vsBot: !!vsBot });
     }, [game, board, score, vsBot, setLocalGameData]);

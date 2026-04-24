@@ -2,6 +2,7 @@ import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
 import App from './App.tsx'
 import {AuthProvider} from "./context/AuthContext.tsx";
+import {LocalGameContext} from "./context/LocalGameContext.tsx";
 
 /**
  * App entry point.
@@ -18,9 +19,12 @@ if (window.location.pathname !== '/' && window.location.pathname !== '/index.htm
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        {/* AuthProvider wraps everything so all components can access auth state */}
+        {/* AuthProvider: global auth state (user, token, settings) */}
+        {/* LocalGameContext: global local game state (board, score, mode) */}
         <AuthProvider>
-            <App/>
+            <LocalGameContext>
+                <App/>
+            </LocalGameContext>
         </AuthProvider>
     </StrictMode>,
 )

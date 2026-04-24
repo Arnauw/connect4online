@@ -7,7 +7,8 @@
  * - JWT token management with automatic refresh
  * - User settings (for logged-in users) and guest settings (for visitors)
  * - Active online game room tracking
- * - Local game state persistence (vs Bot, 2P mode)
+ *
+ * Local game state (vs Bot, 2P mode) is managed separately in LocalGameContext.
  *
  * Token Management Strategy:
  * 1. Tokens stored in localStorage for persistence across page refreshes
@@ -23,19 +24,8 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { jwtDecode } from "jwt-decode";
-import { Connect4 } from "../logic/Connect4";
 import { api } from "../api/axios";
 import axios from "axios";
-
-/**
- * Structure for local game state (vs Bot or 2 Player)
- * Persisted to localStorage so games survive page refresh
- */
-export interface LocalGameData {
-    game: Connect4;                      // The Connect4 game instance with board state
-    score: { p1: number; p2: number };   // Player scores for the session
-    vsBot: boolean;                      // Whether playing against bot or another human
-}
 
 /**
  * User preferences/settings structure
@@ -79,8 +69,6 @@ interface AuthContextType {
     updateGuestSettings: (newSettings: UserSettings) => void;  // Update guest settings
     activeGameStatus: string | null;                     // Current online game status (PLAYING/FINISHED)
     setActiveGameStatus: (status: string | null) => void;  // Update game status
-    localGameData: LocalGameData | null;                 // Current local game state
-    setLocalGameData: (data: LocalGameData | null) => void;  // Update local game state
 }
 
 // Create the context with null as initial value
@@ -130,42 +118,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     // Not persisted - only for UI state management
     const [activeGameStatus, setActiveGameStatus] = useState<string | null>(null);
 
-    // Local game state (vs Bot, 2 Player mode)
-    // Persisted so games survive page refresh (F5)
-    const [localGameData, setLocalGameData] = useState<LocalGameData | null>(() => {
-        const saved = localStorage.getItem("local_game_data");
-        if (!saved) return null;
-        try {
-            const parsed = JSON.parse(saved);
-            // Re-hydrate the Connect4 class instance
-            // (JSON.parse doesn't restore class methods)
-            const game = new Connect4();
-            Object.assign(game, parsed.game);
-            return { ...parsed, game };
-        } catch (e) {
-            console.error("Failed to load local game data", e);
-            return null;
-        }
-    });
-
     // Merge user settings with defaults, or use guest settings
     const activeSettings = user?.settings ? {...defaultSettings, ...user.settings} : guestSettings;
-
-    // ====================
-    // PERSISTENCE EFFECTS
-    // ====================
-
-    /**
-     * Persist local game data to localStorage
-     * Allows games to survive page refreshes
-     */
-    useEffect(() => {
-        if (localGameData) {
-            localStorage.setItem("local_game_data", JSON.stringify(localGameData));
-        } else {
-            localStorage.removeItem("local_game_data");
-        }
-    }, [localGameData]);
 
     // ====================
     // HELPER FUNCTIONS
@@ -205,17 +159,18 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
     /**
      * Logout completely
-     * Clears all tokens, user data, and game state
+     * Clears all tokens and user data, dispatches "auth_logout" so LocalGameContext clears game state
      */
     const logout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("active_room");
+        localStorage.removeItem("local_game_data");
         setToken(null);
         setUser(null);
         setActiveRoomState(null);
         setActiveGameStatus(null);
-        setLocalGameData(null);
+        window.dispatchEvent(new CustomEvent("auth_logout"));
     };
 
     /**
@@ -380,8 +335,6 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             setActiveRoom,
             activeGameStatus,
             setActiveGameStatus,
-            localGameData,
-            setLocalGameData,
         }}>
             {children}
         </AuthContext.Provider>
@@ -392,7 +345,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
  * useAuth Hook
  *
  * Custom hook to access the auth context from any component
- * Throws an error if used outside of AuthProvider
+ * Throws an error if used outside of AuthProvider.
  *
  * Usage:
  * const { user, login, logout } = useAuth();
