@@ -44,7 +44,7 @@ echo "Stopping existing Messenger workers..."
 APP_ENV=prod php bin/console messenger:stop-workers
 
 echo "Starting Messenger worker in background..."
-nohup APP_ENV=prod php bin/console messenger:consume async -vv >> /var/log/messenger-worker.log 2>&1 &
+nohup APP_ENV=prod php bin/console messenger:consume async -vv >> var/log/messenger-worker.log 2>&1 &
 
 cd ..
 
