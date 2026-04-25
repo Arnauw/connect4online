@@ -54,9 +54,16 @@ echo "Resetting file permissions..."
 sudo chown -R fedora:nginx /var/www/mywebapps/
 sudo find /var/www/mywebapps/ -type d -exec chmod 775 {} \;
 sudo find /var/www/mywebapps/ -type f -exec chmod 664 {} \;
+
+# Config and Symfony runtime dirs must be executable/writable
 sudo chown -R fedora:nginx /var/www/mywebapps/connect4online/backend/config
 sudo chmod -R 775 /var/www/mywebapps/connect4online/backend/config
+sudo chmod -R 775 /var/www/mywebapps/connect4online/backend/var
 
-chmod +x ./deploy.sh
+# Scripts must stay executable
+sudo chmod +x /var/www/mywebapps/connect4online/deploy.sh
+
+# Reapply SELinux write context on upload dir (survives restorecon after permission reset)
+sudo restorecon -Rv /var/www/mywebapps/connect4online/backend/public/uploads/
 
 echo "Deployment complete!"
