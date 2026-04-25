@@ -131,7 +131,7 @@ pnpm all
 | `pnpm front` | Runs only the React dev server. |
 | `pnpm back` | Runs only the Symfony server (`--no-tls`). |
 | `pnpm docker` | Starts Docker infrastructure (Postgres, Mercure, Adminer, Mailpit). |
-| `pnpm dockerS` | Stops all Docker containers. |
+| `pnpm dockerStop` | Stops all Docker containers. |
 | `pnpm dockerDel` | **NUCLEAR.** Stops containers and deletes all data volumes. |
 | `pnpm installAll` | Installs all frontend (pnpm) and backend (composer) dependencies. |
 | `pnpm clear` | Clears the Symfony cache. |
