@@ -4,5 +4,5 @@ lexik_jwt_authentication:
     pass_phrase: '%env(JWT_PASSPHRASE)%'
 #    token_ttl: 3600 # 1 hour
     token_ttl: 1200 # 20 minutes
-#    token_ttl: 30 # 1 minute
+#    token_ttl: 20 # 30s
     user_id_claim: email
