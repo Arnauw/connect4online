@@ -13,10 +13,7 @@
  * Token Management Strategy:
  * 1. Tokens stored in localStorage for persistence across page refreshes
  * 2. JWT automatically decoded to extract user data
- * 3. Three mechanisms keep tokens fresh:
- *    a) axios interceptor (handles 401 errors)
- *    b) Background timer (refreshes 10 seconds before expiry)
- *    c) Event listener (syncs with axios interceptor)
+ * 3. Background timer refreshes token 10 seconds before expiry
  *
  * Usage:
  * const { user, login, logout, settings } = useAuth();
@@ -194,7 +191,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
      * 1. Decodes the JWT to extract user data
      * 2. Verifies token is not expired
      * 3. Calls /api/me to get fresh user data from backend
-     * 4. If token expired, axios interceptor will auto-refresh
+     * 4. On 401/403, logs out (token invalid or expired)
      */
     useEffect(() => {
         const initAuth = async () => {
@@ -216,9 +213,6 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             }
 
             try {
-                // Verify token with backend and get fresh user data
-                // If token is expired, axios interceptor will catch 401
-                // and automatically refresh using refresh_token
                 const response = await api.get('/api/me');
 
                 // Success - update user data with backend response
@@ -271,13 +265,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
                     const { token: newToken, refresh_token: newRefreshToken } = response.data;
 
-                    // Save both new tokens to localStorage
-                    localStorage.setItem("token", newToken);
                     localStorage.setItem("refresh_token", newRefreshToken);
-
-                    // Notify the app that tokens were refreshed
-                    // This triggers EFFECT #3 below to update React state
-                    window.dispatchEvent(new CustomEvent("auth_token_refreshed", { detail: newToken }));
+                    login(newToken);
 
                 } catch (err) {
                     console.error("Proactive token refresh failed", err);
@@ -290,33 +279,6 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             return () => clearTimeout(timeout);
         }
     }, [user?.exp]);
-
-    /**
-     * EFFECT #3: Listen for Axios Interceptor Token Refresh
-     *
-     * When the axios interceptor refreshes tokens (after a 401 error),
-     * it fires a custom event. This effect listens for that event and
-     * updates the React state to keep everything in sync.
-     *
-     * This creates a two-way sync:
-     * - axios.ts can refresh tokens (in response to 401)
-     * - AuthContext stays updated with new tokens
-     */
-    useEffect(() => {
-        const handleTokenRefresh = (e: any) => {
-            // Update token state, which triggers EFFECT #1 above
-            // to decode and verify the new token
-            setToken(e.detail);
-        };
-
-        // Listen for custom event fired by axios interceptor
-        window.addEventListener("auth_token_refreshed", handleTokenRefresh as EventListener);
-
-        // Cleanup listener on unmount
-        return () => {
-            window.removeEventListener("auth_token_refreshed", handleTokenRefresh as EventListener);
-        };
-    }, []);
 
     // ====================
     // PROVIDE CONTEXT
