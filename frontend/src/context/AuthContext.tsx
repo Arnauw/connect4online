@@ -33,10 +33,10 @@ import axios from "axios";
  * and guests (saved to localStorage)
  */
 export interface UserSettings {
-    theme?: string;    // UI theme (e.g., 'dark-neon')
-    music?: boolean;   // Background music on/off
-    sfx?: boolean;     // Sound effects on/off
-    volume?: number;   // Volume level 0-100
+    theme?: string;
+    music?: boolean;
+    sfx?: boolean;
+    volume?: number;
 }
 
 /**
@@ -44,13 +44,13 @@ export interface UserSettings {
  * This is what gets decoded from the JWT access token
  */
 interface JwtPayload {
-    id: number;              // User's database ID
-    username: string;        // User's display name
-    email: string;           // User's email address
-    elo: number;             // User's ELO rating (for online play)
-    avatar?: string;         // Avatar filename (e.g., "default-avatar.jpg") or upload path
-    settings?: UserSettings; // User's saved settings
-    exp: number;             // Token expiration timestamp (Unix time in seconds)
+    id: number;
+    username: string;
+    email: string;
+    elo: number;
+    avatar?: string;
+    settings?: UserSettings;
+    exp: number;
 }
 
 /**
@@ -58,17 +58,17 @@ interface JwtPayload {
  * Defines all data and functions available to components using this context
  */
 interface AuthContextType {
-    user: JwtPayload | null;                             // Current user data (null if logged out)
-    token: string | null;                                // JWT access token
-    settings: UserSettings;                              // Active settings (user's or guest's)
-    activeRoom: string | null;                           // Active online game room code
-    setActiveRoom: (code: string | null) => void;        // Update active room
-    login: (token: string) => void;                      // Login with a new token
-    logout: () => void;                                  // Logout and clear all data
-    updateUser: (newData: Partial<JwtPayload>) => void;  // Update user data (e.g., after profile edit)
-    updateGuestSettings: (newSettings: UserSettings) => void;  // Update guest settings
-    activeGameStatus: string | null;                     // Current online game status (WAITING/PLAYING/FINISHED)
-    setActiveGameStatus: (status: string | null) => void;  // Update game status
+    user: JwtPayload | null;
+    token: string | null;
+    settings: UserSettings;
+    activeRoom: string | null;
+    setActiveRoom: (code: string | null) => void;
+    login: (token: string) => void;
+    logout: () => void;
+    updateUser: (newData: Partial<JwtPayload>) => void;
+    updateGuestSettings: (newSettings: UserSettings) => void;
+    activeGameStatus: string | null;
+    setActiveGameStatus: (status: string | null) => void;
 }
 
 // Create the context with null as initial value

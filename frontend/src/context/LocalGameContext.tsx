@@ -25,9 +25,9 @@ import { Connect4 } from "../logic/Connect4";
  * Persisted to localStorage so games survive page refresh
  */
 export interface LocalGameData {
-    game: Connect4;                     // The Connect4 game instance with board state
-    score: { p1: number; p2: number };  // Player scores for the session
-    vsBot: boolean;                     // Whether playing against bot or another human
+    game: Connect4;
+    score: { p1: number; p2: number };
+    vsBot: boolean;
 }
 
 interface LocalGameContextType {

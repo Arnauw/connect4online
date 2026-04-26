@@ -41,19 +41,14 @@ type BoardUIProps = {
 };
 
 export const BoardUI = ({
-    board,
-    onDrop,
-    winningLine,
-    isGameOver,
-    disabled
+    board, onDrop, winningLine, isGameOver, disabled
 }: BoardUIProps) => {
     return (
-        <div className={`bg-blue-600/90 p-3 md:p-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.6)] border-2 border-blue-400/50 backdrop-blur-sm transition-all ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
+        <div className={` bg-blue-600/90 p-3 md:p-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.6)] border-2 border-blue-400/50 backdrop-blur-sm transition-all${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
             {board.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex">
                     {row.map((cell, colIndex) => {
                         const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
-                        // Dim all non-winning filled cells when game is over to highlight the win
                         const shouldDim = isGameOver && cell !== 0 && !isWinnerCell;
 
                         return (

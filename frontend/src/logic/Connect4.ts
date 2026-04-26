@@ -23,13 +23,12 @@ export type RowIndex = 0 | 1 | 2 | 3 | 4 | 5;  // Valid row indices
  * Red = 1, Yellow = 2, empty = 0
  *
  *        Col 0  Col 1  Col 2  Col 3  Col 4  Col 5  Col 6
- *         ↓      ↓      ↓      ↓      ↓      ↓      ↓
- * Row 0 [ 0,     0,     0,     0,     0,     0,     0 ]  <-- TOP
+ * Row 0 [ 0,     0,     0,     0,     0,     0,     0 ]
  * Row 1 [ 0,     0,     0,     0,     0,     0,     0 ]
  * Row 2 [ 0,     0,     0,     0,     0,     0,     0 ]
  * Row 3 [ 0,     0,     0,     0,     0,     0,     0 ]
  * Row 4 [ 0,     0,     0,     X,     0,     0,     0 ]
- * Row 5 [ 2,     2,     1,     2,     1,     0,     0 ]  <-- BOTTOM
+ * Row 5 [ 2,     2,     1,     2,     1,     0,     0 ]
  */
 
 /**
@@ -37,17 +36,14 @@ export type RowIndex = 0 | 1 | 2 | 3 | 4 | 5;  // Valid row indices
  * Manages game state, validates moves, and detects wins
  */
 export class Connect4 {
-    // Board dimensions (standard Connect4 size)
     rows = 6;
     cols = 7;
-
-    // Game state
-    board: Cell[][];  // 2D array representing the game board
-    currentPlayer: Player;  // Which player's turn it is (1 or 2)
-    winner: Player | null;  // Winner if game is over, null otherwise
-    gameOver: boolean;  // Whether the game has ended
-    movesPlayed: number;  // Total moves played (used to detect draws)
-    winningLine: [number, number][] | null;  // Coordinates of the 4 winning pieces
+    board: Cell[][];
+    currentPlayer: Player;
+    winner: Player | null;
+    gameOver: boolean; 
+    movesPlayed: number;
+    winningLine: [number, number][] | null;
 
     /**
      * Constructor - Initializes a new game
@@ -71,7 +67,7 @@ export class Connect4 {
         for (let r = 0; r < this.rows; r++) {
             const row: Cell[] = [];
             for (let c = 0; c < this.cols; c++) {
-                row.push(0);  // 0 represents an empty cell
+                row.push(0);
             }
             board.push(row);
         }
@@ -101,13 +97,10 @@ export class Connect4 {
         if (column < 0 || column > 6) {
             return false;
         }
-
-        // Find the lowest empty row in this column (gravity simulation)
-        // Start from bottom (row 5) and work upward
+        // Find the lowest empty row in this column
         for (let r = this.rows - 1; r >= 0; r--) {
-            // Found an empty cell in this column
+
             if (this.board[r][column] === 0) {
-                // Place the current player's piece
                 this.board[r][column] = this.currentPlayer;
                 this.movesPlayed++;
                 const row = r as RowIndex;
@@ -120,18 +113,16 @@ export class Connect4 {
                 }
                 // Check if board is full (draw)
                 else if (this.movesPlayed >= totalBoardCells) {
-                    this.gameOver = true;  // Game over, no winner (draw)
+                    this.gameOver = true;
                 }
-                // Game continues - switch to next player
                 else {
                     this.switchPlayerTurn();
                 }
 
-                return true;  // Move was successful
+                return true;
             }
         }
-
-        // Column is full, move cannot be made
+        // Column is full, cannot do this move
         return false;
     }
 

@@ -42,7 +42,6 @@ const LayoutWrapper = () => {
 function App() {
     return (
         <>
-            {/* Global toast notification system — styled to match dark neon theme */}
             <Toaster
                 position="top-center"
                 toastOptions={{
@@ -65,9 +64,7 @@ function App() {
 
             <HashRouter>
                 <Routes>
-                    {/* All routes share the same layout wrapper */}
                     <Route element={<LayoutWrapper/>}>
-
                         {/* Public routes */}
                         <Route path="/" element={<Home/>}/>
                         <Route path="/local1p" element={<LocalGame1P/>}/>
@@ -80,8 +77,6 @@ function App() {
                         <Route path="/reset-password" element={<ResetPassword/>}/>
                         <Route path="/settings" element={<Settings/>} />
                         <Route path="/privacy" element={<PrivacyPolicy/>} />
-
-                        {/* Catch-all: unknown URL → home */}
                         <Route path="*" element={<Navigate to="/" replace />} />
 
                         {/* Protected routes — require valid JWT token */}

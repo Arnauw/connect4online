@@ -19,8 +19,8 @@ import type { Cell } from "../logic/Connect4";
  * Structure of the request sent from the main thread to the worker
  */
 type BotRequest = {
-    board: Cell[][];      // Current game board state
-    difficulty: number;   // AI difficulty level (reserved for future implementation)
+    board: Cell[][];
+    difficulty: number;
 };
 
 /**
