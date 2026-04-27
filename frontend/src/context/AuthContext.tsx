@@ -214,21 +214,18 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
             try {
                 const response = await api.get('/api/me');
-
                 // Success - update user data with backend response
                 setUser({...decoded, ...response.data});
 
             } catch (error: any) {
-                // Failed completely (couldn't refresh or verify)
                 console.log("Server verification failed or session expired", error);
                 if (error.response?.status === 401 || error.response?.status === 403) {
                     logout();
                 }
             }
         };
-
         initAuth();
-    }, [token]);  // Run when token changes
+    }, [token]);
 
     /**
      * EFFECT #2: Proactive Token Refresh Timer

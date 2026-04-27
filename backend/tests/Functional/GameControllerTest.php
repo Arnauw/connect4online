@@ -91,9 +91,9 @@ class GameControllerTest extends WebTestCase
     /** Creating a room returns 201, a room code, and persists the game in WAITING status. */
     public function testCreateGame(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $container = static::getContainer();
-        $em        = $container->get('doctrine')->getManager();
+        $em = $container->get('doctrine')->getManager();
 
         $user = $this->createUser($em, 'creator@example.com', 'creator');
         $client->loginUser($user);

@@ -57,10 +57,8 @@ function computeBestMove(board: Cell[][]): number {
             validColumns.push(col);
         }
     }
-
     // No valid moves available (board is full)
     if (validColumns.length === 0) return -1;
-
     // Pick a random valid column
     const randomIndex = Math.floor(Math.random() * validColumns.length);
     return validColumns[randomIndex];

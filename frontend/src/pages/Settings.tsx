@@ -370,9 +370,9 @@ export const Settings = () => {
                         <button
                             type="button"
                             onClick={() => setShowDangerZone(true)}
-                            className="text-red-400 hover:text-red-300 text-xs underline transition-colors text-center w-full"
+                            className="w-full py-2 px-4 rounded-lg border border-red-900/50 text-red-400 hover:text-red-300 hover:border-red-700 hover:bg-red-950/30 text-sm font-medium transition-all"
                         >
-                            ⚠️ Danger Zone
+                            Danger Zone
                         </button>
                     </div>
                 )}

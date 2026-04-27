@@ -98,10 +98,9 @@ export const Login = () => {
                 { email, password }
             );
 
-            // Store refresh token separately (longer-lived, used to get new access tokens)
+            // Store refresh token separately
             localStorage.setItem("refresh_token", response.data.refresh_token);
-
-            // Store access token via AuthContext (also saves to localStorage)
+            // Store access token via AuthContext and also saves to localStorage
             login(response.data.token);
             toast.success('Welcome back!');
             navigate("/");
@@ -113,7 +112,6 @@ export const Login = () => {
                 const serverMessage = err.response.data?.message;
 
                 if (serverMessage) {
-                    // Backend returned a specific message (e.g., "Account not activated")
                     const msg = `ACCESS DENIED: ${serverMessage}`;
                     setError(msg);
                     toast.error(msg);

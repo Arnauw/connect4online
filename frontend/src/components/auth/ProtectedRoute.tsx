@@ -14,12 +14,10 @@ import { useAuth } from "../../context/AuthContext";
 
 export const ProtectedRoute = () => {
     const { token } = useAuth();
-
-    // No token = not authenticated → redirect to login
+    // No token = not authenticated -> redirect to login
     if (!token) {
         return <Navigate to="/login" replace />;
     }
-
-    // Token present → render the protected child route
+    // Token present -> render the protected child route
     return <Outlet />;
 };

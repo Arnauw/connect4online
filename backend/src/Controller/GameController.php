@@ -72,29 +72,24 @@ class GameController extends AbstractController
     #[Route('/create', name: 'api_game_create', methods: ['POST'])]
     public function create(): JsonResponse
     {
-        /** @var User $user - Get currently authenticated user */
         $user = $this->getUser();
 
-        // Create new game instance (constructor sets defaults)
         $game = new Game();
         $game->setPlayer1($user);
-        $game->setStatus('WAITING');  // Waiting for opponent to join
-        $game->setCurrentTurn(1);      // Player 1 starts
+        $game->setStatus('WAITING');
+        $game->setCurrentTurn(1);
 
         // Initialize empty 6x7 board
         $emptyBoard = array_fill(0, 6, array_fill(0, 7, 0));
         $game->setBoard($emptyBoard);
 
-        // Generate random 6-character hex code (e.g., "A3F7E2")
-        // Using 3 random bytes = 24 bits = 16,777,216 combinations
-        // Much more secure than sequential codes
+        // Generate random 6-character hex code ("A3F7E2")
         $code = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
         $game->setRoomCode($code);
 
         // Save game to database
         $this->em->persist($game);
         $this->em->flush();
-
 
         return $this->json([
             'id' => $game->getId(),

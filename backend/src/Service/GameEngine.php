@@ -39,21 +39,17 @@ class GameEngine
      */
     public function dropPiece(array &$board, int $col, int $player): int
     {
-        // Validate column index
         if ($col < 0 || $col >= self::COLS) {
-            return -1;  // Invalid column
+            return -1;  // invalid column
         }
-
-        // Find the lowest empty cell in this column (gravity simulation)
-        // Start from bottom (row 5) and work upward
-        for ($r = self::ROWS - 1; $r >= 0; $r--) {
-            if ($board[$r][$col] === 0) {  // Found empty cell
-                $board[$r][$col] = $player;  // Place the piece
-                return $r;  // Return the row where piece landed
+        // find the lowest empty cell in this column
+        for ($row = self::ROWS - 1; $row >= 0; $row--) {
+            if ($board[$row][$col] === 0) {  // if cell is empty
+                $board[$row][$col] = $player;  // place the piece
+                return $row;
             }
         }
-
-        return -1;  // Column is full, move invalid
+        return -1;  // column is full
     }
 
     /**
@@ -72,12 +68,11 @@ class GameEngine
     {
         // Define all 4 possible winning directions
         $directions = [
-            [0, 1],   // Horizontal → (row stays same, column changes)
-            [1, 0],   // Vertical ↓ (row changes, column stays same)
+            [0, 1],   // Horizontal -- (row stays same, column changes)
+            [1, 0],   // Vertical | (row changes, column stays same)
             [1, 1],   // Diagonal \ (both row and column increase)
             [1, -1]   // Diagonal / (row increases, column decreases)
         ];
-
         // Check each direction for a winning line
         foreach ($directions as [$dr, $dc]) {
             $line = $this->getWinningLine($board, $row, $col, $dr, $dc, $player);
@@ -85,8 +80,8 @@ class GameEngine
                 return $line;  // Win found! Return the 4 winning coordinates
             }
         }
-
-        return null;  // No win found in any direction
+        // No win found in any direction
+        return null;
     }
 
     /**

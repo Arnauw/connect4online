@@ -21,7 +21,6 @@
 
 import type { Cell } from "../../logic/Connect4.ts";
 
-/** Returns Tailwind classes for a cell's fill color and glow effect */
 const getCellClass = (cell: Cell): string => {
     if (cell === 1) {
         return "bg-red-500 shadow-[inset_0_4px_6px_rgba(0,0,0,0.4)] drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]";
@@ -66,7 +65,7 @@ export const BoardUI = ({
                                         w-full h-full rounded-full transition-all duration-500
                                         ${getCellClass(cell)}
                                         ${isWinnerCell ? 'animate-victory' : 'animate-drop'}
-                                        ${shouldDim ? 'opacity-30 grayscale-[50%]' : ''}
+                                        ${shouldDim ? 'opacity-30 grayscale-50' : ''}
                                     `}/>
                                 ) : (
                                     <div className="w-full h-full rounded-full bg-slate-900/40 shadow-inner"/>

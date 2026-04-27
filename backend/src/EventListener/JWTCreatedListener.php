@@ -53,15 +53,13 @@ class JWTCreatedListener
         // Extend the default payload with app-specific fields
         $payload = $event->getData();
 
-        $payload['id']       = $user->getId();
-        $payload['email']    = $user->getEmail();
+        $payload['id'] = $user->getId();
+        $payload['email'] = $user->getEmail();
         $payload['username'] = $user->getUsername();
-        $payload['elo']      = $user->getElo();
-        $payload['avatar']   = $user->getAvatar();
-        $payload['roles']    = $user->getRoles();
+        $payload['elo'] = $user->getElo();
+        $payload['avatar'] = $user->getAvatar();
+        $payload['roles'] = $user->getRoles();
         $payload['settings'] = $user->getSettings();
-        // IP intentionally excluded — JWT is base64-readable and stored in localStorage,
-        // so including the IP would expose it to anyone who reads the token.
 
         $event->setData($payload);
     }

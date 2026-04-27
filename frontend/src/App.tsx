@@ -79,7 +79,7 @@ function App() {
                         <Route path="/privacy" element={<PrivacyPolicy/>} />
                         <Route path="*" element={<Navigate to="/" replace />} />
 
-                        {/* Protected routes — require valid JWT token */}
+                        {/* Protected routes - require valid JWT token */}
                         <Route element={<ProtectedRoute/>}>
                             <Route path="/profile" element={<Profile/>}/>
                         </Route>

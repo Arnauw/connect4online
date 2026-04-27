@@ -17,13 +17,13 @@
  * - disabled:   Grays out the button and prevents interaction
  */
 
-import type {ReactNode, MouseEvent} from "react";
+import type {ReactNode} from "react";
 import {useSoundEffect} from "../../hooks/useSoundEffect";
 import clickSfx from "../../assets/sounds/sfx/click.ogg";
 
 interface MenuButtonProps {
     children: ReactNode;
-    onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
+    onClick?: (e: any) => void;
     secondary?: boolean;
     type?: "button" | "submit" | "reset";
     className?: string;
@@ -40,7 +40,7 @@ export const MenuButton = ({
 }: MenuButtonProps) => {
     const playSound = useSoundEffect();
 
-    const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
+    const handleClick = (e: any) => {
         playSound(clickSfx);
         if (onClick) onClick(e);
     };
@@ -53,8 +53,7 @@ export const MenuButton = ({
             className={`
                 w-full max-w-md py-3 rounded-full
                 font-bold text-lg tracking-wider transition-all duration-300
-                border-2 backdrop-blur-sm
-                active:scale-95
+                border-2 backdrop-blur-sm active:scale-95
                 disabled:opacity-50 disabled:cursor-not-allowed
                 ${secondary
                 ? "border-slate-500 text-slate-300 hover:bg-slate-800/50"

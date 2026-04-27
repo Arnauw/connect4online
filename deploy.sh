@@ -67,3 +67,5 @@ sudo chmod +x /var/www/mywebapps/connect4online/deploy.sh
 sudo restorecon -Rv /var/www/mywebapps/connect4online/backend/public/uploads/
 
 echo "Deployment complete!"
+
+
