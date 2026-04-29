@@ -33,6 +33,9 @@ use App\Entity\Game;
 use App\Entity\User;
 use App\Service\GameEngine;
 use Doctrine\ORM\EntityManagerInterface;
+use Lcobucci\JWT\Configuration;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Signer\Key\InMemory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,6 +43,7 @@ use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 // Base route for all game endpoints
 #[Route('/api/game')]
@@ -50,7 +54,11 @@ class GameController extends AbstractController
     /**
      * Constructor - Inject EntityManager for database operations
      */
-    public function __construct(private EntityManagerInterface $em) {}
+    public function __construct(
+        private EntityManagerInterface $em,
+        #[Autowire('%env(MERCURE_JWT_SECRET)%')]
+        private string $mercureJwtSecret,
+    ) {}
 
     /**
      * CREATE GAME ROOM
@@ -162,7 +170,8 @@ class GameController extends AbstractController
                 'type' => 'GAME_STARTED',
                 'player2' => $user->getUsername(),
                 'gameId' => $game->getId()
-            ])
+            ]),
+            private: true
         );
         $hub->publish($update);
 
@@ -314,7 +323,8 @@ class GameController extends AbstractController
                 'winningLine' => $game->getWinningLine(),
                 'scoreP1' => $game->getScoreP1(),
                 'scoreP2' => $game->getScoreP2()
-            ], JSON_THROW_ON_ERROR)
+            ], JSON_THROW_ON_ERROR),
+            private: true
         );
         $hub->publish($update);
 
@@ -460,7 +470,7 @@ class GameController extends AbstractController
                 'currentTurn' => $game->getCurrentTurn(),
                 'scoreP1' => $game->getScoreP1(),
                 'scoreP2' => $game->getScoreP2()
-            ], JSON_THROW_ON_ERROR));
+            ], JSON_THROW_ON_ERROR), private: true);
             $hub->publish($update);
 
             return $this->json(['message' => 'Rematch starting!']);
@@ -473,7 +483,7 @@ class GameController extends AbstractController
         $update = new Update($topic, json_encode([
             'type' => 'REMATCH_REQUESTED',
             'playerRequesting' => $playerNum
-        ], JSON_THROW_ON_ERROR));
+        ], JSON_THROW_ON_ERROR), private: true);
         $hub->publish($update);
 
         return $this->json(['message' => 'Rematch requested.']);
@@ -569,7 +579,7 @@ class GameController extends AbstractController
                 'scoreP1' => $game->getScoreP1(),
                 'scoreP2' => $game->getScoreP2(),
                 'message' => 'Your opponent fled the match. You win!'
-            ], JSON_THROW_ON_ERROR));
+            ], JSON_THROW_ON_ERROR), private: true);
             $hub->publish($update);
 
             return $this->json(['message' => 'You forfeited the match.']);
@@ -592,7 +602,7 @@ class GameController extends AbstractController
             $update = new Update($topic, json_encode([
                 'type' => 'PLAYER_LEFT_FINISHED_GAME',
                 'playerNum' => $playerNumWhoLeft
-            ], JSON_THROW_ON_ERROR));
+            ], JSON_THROW_ON_ERROR), private: true);
             $hub->publish($update);
 
             // If BOTH players have now left, delete the game
@@ -607,5 +617,44 @@ class GameController extends AbstractController
 
         // Fallback (shouldn't reach here)
         return $this->json(['message' => 'Left match.']);
+    }
+
+    /**
+     * GET MERCURE SUBSCRIBER TOKEN
+     * GET /api/game/{code}/mercure-token
+     *
+     * Returns a short-lived Mercure subscriber JWT scoped to the given room topic.
+     * Only actual players in the game can request a token.
+     */
+    #[Route('/{code}/mercure-token', name: 'api_game_mercure_token', methods: ['GET'])]
+    public function mercureToken(string $code): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $game = $this->em->getRepository(Game::class)->findOneBy(['roomCode' => strtoupper($code)]);
+
+        if (!$game) {
+            return $this->json(['error' => 'Game not found.'], 404);
+        }
+
+        $isPlayer = $game->getPlayer1() === $user || $game->getPlayer2() === $user;
+        if (!$isPlayer) {
+            return $this->json(['error' => 'Not a player in this game.'], 403);
+        }
+
+        $topic = 'https://connect4.online/room/' . $game->getRoomCode();
+
+        $jwtConfig = Configuration::forSymmetricSigner(
+            new Sha256(),
+            InMemory::plainText($this->mercureJwtSecret)
+        );
+
+        $now = new \DateTimeImmutable();
+        $token = $jwtConfig->builder()
+            ->expiresAt($now->modify('+2 hours'))
+            ->withClaim('mercure', ['subscribe' => [$topic]])
+            ->getToken($jwtConfig->signer(), $jwtConfig->signingKey());
+
+        return $this->json(['token' => $token->toString()]);
     }
 }

@@ -132,11 +132,18 @@ export const OnlineBoard = () => {
     useEffect(() => {
         if (!roomCode) return;
 
-        const mercureUrl = new URL(`${import.meta.env.VITE_MERCURE_URL}/.well-known/mercure`);
-        mercureUrl.searchParams.append('topic', `https://connect4.online/room/${roomCode}`);
-        const eventSource = new EventSource(mercureUrl.toString());
+        let eventSource: EventSource | null = null;
+        let cancelled = false;
 
-        eventSource.onmessage = (event) => {
+        api.get(`/api/game/${roomCode}/mercure-token`).then(res => {
+            if (cancelled) return;
+
+            const mercureUrl = new URL(`${import.meta.env.VITE_MERCURE_URL}/.well-known/mercure`);
+            mercureUrl.searchParams.append('topic', `https://connect4.online/room/${roomCode}`);
+            mercureUrl.searchParams.append('authorization', res.data.token);
+            eventSource = new EventSource(mercureUrl.toString());
+
+            eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
             // Opponent joined while we were on the board (rare) — reload to get correct player nums
@@ -207,8 +214,12 @@ export const OnlineBoard = () => {
                 }
             }
         };
+        }).catch(err => console.error('Failed to get Mercure token:', err));
 
-        return () => eventSource.close();
+        return () => {
+            cancelled = true;
+            eventSource?.close();
+        };
     }, [roomCode, playSound, setActiveGameStatus, setActiveRoom, myPlayerNum]);
 
     // EFFECT 4: Play end-game sound when game ends (once per game)

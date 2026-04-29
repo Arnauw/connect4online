@@ -108,22 +108,33 @@ export const OnlineLobby = () => {
     useEffect(() => {
         if (mode !== "host" || !roomCode) return;
 
-        const mercureUrl = new URL(`${import.meta.env.VITE_MERCURE_URL}/.well-known/mercure`);
-        mercureUrl.searchParams.append('topic', `https://connect4.online/room/${roomCode}`);
+        let eventSource: EventSource | null = null;
+        let cancelled = false;
 
-        const eventSource = new EventSource(mercureUrl.toString());
+        api.get(`/api/game/${roomCode}/mercure-token`).then(res => {
+            if (cancelled) return;
 
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'GAME_STARTED') {
-                // Mark that navigation is happening due to game start, not user leaving
-                gameStartedRef.current = true;
-                eventSource.close();
-                navigate(`/online/${roomCode}`);
-            }
+            const mercureUrl = new URL(`${import.meta.env.VITE_MERCURE_URL}/.well-known/mercure`);
+            mercureUrl.searchParams.append('topic', `https://connect4.online/room/${roomCode}`);
+            mercureUrl.searchParams.append('authorization', res.data.token);
+
+            eventSource = new EventSource(mercureUrl.toString());
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'GAME_STARTED') {
+                    gameStartedRef.current = true;
+                    eventSource?.close();
+                    navigate(`/online/${roomCode}`);
+                }
+            };
+        }).catch(err => {
+            if (!cancelled) console.error('Failed to get Mercure token:', err);
+        });
+
+        return () => {
+            cancelled = true;
+            eventSource?.close();
         };
-
-        return () => eventSource.close();
     }, [mode, roomCode, navigate]);
 
     // Cleanup: if user navigates away while still hosting (before any opponent joined),
