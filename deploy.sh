@@ -62,6 +62,8 @@ sudo chmod -R 775 /var/www/mywebapps/connect4online/backend/var
 
 # Scripts must stay executable
 sudo chmod +x /var/www/mywebapps/connect4online/deploy.sh
+sudo chmod +x /var/www/mywebapps/connect4online/cron-setup.sh
+sudo chmod +x /var/www/mywebapps/connect4online/prod-launcher.sh
 
 # Reapply SELinux write context on upload dir (survives restorecon after permission reset)
 sudo restorecon -Rv /var/www/mywebapps/connect4online/backend/public/uploads/
