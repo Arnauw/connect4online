@@ -10,7 +10,7 @@
  * playSound(dropSfx);  // Plays the sound if SFX is enabled
  */
 
-import { useCallback } from "react";
+
 import { useAuth } from "../context/AuthContext";
 
 /**
@@ -41,21 +41,16 @@ export const useSoundEffect = () => {
      * Note: useCallback ensures this function doesn't change unless
      * sfxEnabled or volume changes, preventing unnecessary re-renders
      */
-    const playSound = useCallback((audioFile: string) => {
+    const playSound = (audioFile: string) => {
         // Don't play if user has disabled SFX
         if (!sfxEnabled) return;
-
         // Create new Audio instance with the file
         const audio = new Audio(audioFile);
-
         // Set volume based on user preference (convert 0-100 to 0.0-1.0)
         audio.volume = volume / 100;
-
-        // Attempt to play the sound
-        // Catch errors in case browser blocks autoplay
+        // Attempt to play the sound, catch errors in case browser blocks autoplay
         audio.play().catch(e => console.error("SFX blocked:", e));
-
-    }, [sfxEnabled, volume]);  // Re-create function only when settings change
+    };
 
     return playSound;
 };
