@@ -84,46 +84,41 @@ export class Connect4 {
     }
 
     /**
-     * Attempts to drop a piece in the specified column
-     * Pieces fall to the lowest available row in that column
-     *
-     * @param column - The column index (0-6) where the piece should be dropped
-     * @returns true if the move was successful, false if column is full or invalid
+     * Places the current player's piece in the specified column.
+     * Returns the row where the piece landed, or null if the move is invalid.
      */
-    public dropPiece(column: ColumnIndex): boolean {
-        const totalBoardCells: number = this.rows * this.cols;
-
-        // Validate column index
+    public dropPiece(column: ColumnIndex): RowIndex | null {
         if (column < 0 || column > 6) {
-            return false;
+            return null;
         }
-        // Find the lowest empty row in this column
         for (let r = this.rows - 1; r >= 0; r--) {
-
             if (this.board[r][column] === 0) {
                 this.board[r][column] = this.currentPlayer;
                 this.movesPlayed++;
-                const row = r as RowIndex;
-                console.log(`Piece dropped at board[${r}][${column}]`, this.board[r][column]);
-
-                // Check if this move created a winning line
-                if (this.checkHasWin(row, column)) {
-                    this.winner = this.currentPlayer;
-                    this.gameOver = true;
-                }
-                // Check if board is full (draw)
-                else if (this.movesPlayed >= totalBoardCells) {
-                    this.gameOver = true;
-                }
-                else {
-                    this.switchPlayerTurn();
-                }
-
-                return true;
+                return r as RowIndex;
             }
         }
-        // Column is full, cannot do this move
-        return false;
+        return null;
+    }
+
+    /**
+     * Drops a piece and evaluates the resulting game state (win, draw, or next turn).
+     * Returns the row where the piece landed, or null if the move was invalid.
+     */
+    public applyMove(column: ColumnIndex): RowIndex | null {
+        const row = this.dropPiece(column);
+        if (row === null) return null;
+
+        if (this.checkHasWin(row, column)) {
+            this.winner = this.currentPlayer;
+            this.gameOver = true;
+        } else if (this.movesPlayed >= this.rows * this.cols) {
+            this.gameOver = true;
+        } else {
+            this.switchPlayerTurn();
+        }
+
+        return row;
     }
 
     /**

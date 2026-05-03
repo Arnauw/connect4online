@@ -141,7 +141,7 @@ export const LocalBoard = ({title = "Game", vsBot}: LocalBoardProps) => {
 
     /** Apply a move: drop a piece in the column, update all derived state */
     const handleDrop = (col: ColumnIndex) => {
-        if (game.dropPiece(col)) {
+        if (game.applyMove(col) !== null) {
             playSound(dropSfx);
             setBoard(game.board.map(row => [...row]));  // Spread to trigger re-render
             setCurrentPlayer(game.currentPlayer);
