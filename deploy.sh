@@ -39,6 +39,10 @@ APP_ENV=prod php bin/console lexik:jwt:generate-keypair --skip-if-exists
 echo "Clearing Symfony production cache..."
 APP_ENV=prod php bin/console cache:clear
 
+# Flush OPcache so PHP-FPM workers pick up the new container immediately
+echo "Reloading PHP-FPM to flush OPcache..."
+sudo systemctl reload php85-php-fpm
+
 # Restart the Messenger worker so it picks up the new code
 echo "Stopping existing Messenger workers..."
 APP_ENV=prod php bin/console messenger:stop-workers
@@ -69,5 +73,3 @@ sudo chmod +x /var/www/mywebapps/connect4online/prod-launcher.sh
 sudo restorecon -Rv /var/www/mywebapps/connect4online/backend/public/uploads/
 
 echo "Deployment complete!"
-
-
