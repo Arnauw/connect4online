@@ -44,7 +44,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->elo = 1000;                      // Standard starting ELO rating
         $this->settings = [                     // Default settings
             'theme' => 'dark-neon',
-            'music' => true,
+            'music' => false,
             'volume' => 50,
         ];
         $this->isVerified = false;              // Must verify email before playing online
