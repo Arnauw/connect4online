@@ -35,17 +35,20 @@ APP_ENV=prod php bin/console doctrine:migrations:migrate --no-interaction
 echo "Verifying JWT SSL keys..."
 APP_ENV=prod php bin/console lexik:jwt:generate-keypair --skip-if-exists
 
+# Stop worker BEFORE cache:clear — worker crashes if cache files deleted mid-run
+echo "Stopping existing Messenger workers..."
+APP_ENV=prod php bin/console messenger:stop-workers
+sleep 3
+
 # Clear up the Production Cache
 echo "Clearing Symfony production cache..."
 APP_ENV=prod php bin/console cache:clear
+sudo chown -R fedora:nginx /var/www/mywebapps/connect4online/backend/var/
+sudo find /var/www/mywebapps/connect4online/backend/var/ -type d -exec chmod 775 {} \;
 
 # Flush OPcache so PHP-FPM workers pick up the new container immediately
 echo "Reloading PHP-FPM to flush OPcache..."
 sudo systemctl reload php85-php-fpm
-
-# Restart the Messenger worker so it picks up the new code
-echo "Stopping existing Messenger workers..."
-APP_ENV=prod php bin/console messenger:stop-workers
 
 echo "Starting Messenger worker in background..."
 nohup APP_ENV=prod php bin/console messenger:consume async -vv >> var/log/messenger-worker.log 2>&1 &
