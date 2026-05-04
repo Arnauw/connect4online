@@ -5,12 +5,22 @@ set -e
 
 echo "Starting deployment..."
 
-# Build React Frontend
+# Launch Docker Services first — runs in background while frontend builds
+echo "Starting Docker containers..."
+cd backend
+docker compose --env-file .env.local up -d --build
+cd ..
+
+# Build React Frontend — worker stays alive during slow build, DB warms up in parallel
 echo "Building frontend (Vite/React)..."
 cd frontend
 pnpm install
 pnpm build
 cd ..
+
+echo "Killing Messenger worker..."
+pkill -f "messenger:consume" || true
+sleep 1
 
 # Prepare the Symfony Backend
 echo "Installing backend dependencies..."
@@ -19,14 +29,6 @@ cd backend
 export APP_ENV=prod
 composer install --no-dev --optimize-autoloader
 
-# Launch Docker Services
-echo "Starting Docker containers..."
-docker compose --env-file .env.local up -d --build
-
-# Give PostgreSQL time to boot
-echo "Waiting for the database to initialize..."
-sleep 10
-
 # Run Database Migrations
 echo "Executing database migrations..."
 APP_ENV=prod php bin/console doctrine:migrations:migrate --no-interaction
@@ -34,11 +36,6 @@ APP_ENV=prod php bin/console doctrine:migrations:migrate --no-interaction
 # Generate JWT Keys
 echo "Verifying JWT SSL keys..."
 APP_ENV=prod php bin/console lexik:jwt:generate-keypair --skip-if-exists
-
-# Stop worker BEFORE cache:clear — worker crashes if cache files deleted mid-run
-echo "Stopping existing Messenger workers..."
-APP_ENV=prod php bin/console messenger:stop-workers
-sleep 3
 
 # Clear up the Production Cache
 echo "Clearing Symfony production cache..."
@@ -51,7 +48,7 @@ echo "Reloading PHP-FPM to flush OPcache..."
 sudo systemctl reload php85-php-fpm
 
 echo "Starting Messenger worker in background..."
-nohup APP_ENV=prod php bin/console messenger:consume async -vv >> var/log/messenger-worker.log 2>&1 &
+nohup env APP_ENV=prod php bin/console messenger:consume async -vv >> var/log/messenger-worker.log 2>&1 &
 
 cd ..
 
