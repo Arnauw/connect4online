@@ -1,29 +1,3 @@
-/**
- * UserProfileBadge Component
- *
- * The top-right navigation badge rendered globally in PageLayout.
- * Shows different UI depending on whether the user is logged in.
- *
- * Logged-out view:
- * - Settings gear icon
- * - "LOG IN" and "SIGN UP" buttons
- *
- * Logged-in view:
- * - Username + ELO display
- * - Logout icon (shows confirmation modal on click)
- * - Clickable avatar circle → navigates to /profile
- * - Settings button below the badge
- *
- * Logout flow:
- * - Clicking logout opens a confirmation modal (not immediate)
- * - confirmLogout calls onLogout prop (which calls AuthContext.logout())
- * - Then navigates to home
- *
- * Props:
- * - user:     Current user object or null (null = guest/logged out)
- * - onLogout: Logout handler from AuthContext
- */
-
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import { Avatar } from "./Avatar";
@@ -53,7 +27,6 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
     const handleLoginClick = () => { playSound(clickSfx); navigate('/login'); };
     const handleSignUpClick = () => { playSound(clickSfx); navigate('/register'); };
 
-    // Guest / logged-out view
     if (!user) {
         return (
             <div className="absolute top-6 right-6 z-50 animate-fade-in flex items-center gap-3">
@@ -85,15 +58,12 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
         );
     }
 
-    // Logged-in view
     return (
         <>
             <div className="absolute top-6 right-6 flex flex-col items-end gap-3 z-50 animate-fade-in">
 
-                {/* Main pill: logout icon + username/ELO + avatar */}
                 <div className="flex items-center gap-4 bg-slate-900/80 p-2 pr-4 pl-6 rounded-full border border-slate-700 shadow-lg backdrop-blur-md">
 
-                    {/* Logout icon — opens confirmation modal */}
                     <button
                         onClick={handleLogoutClick}
                         title="Logout"
@@ -104,13 +74,11 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
                         </svg>
                     </button>
 
-                    {/* Username + ELO */}
                     <div className="flex flex-col items-end leading-tight">
                         <span className="text-white font-bold tracking-wide text-sm">{user.username}</span>
                         <span className="text-xs text-cyan-400 font-mono">ELO: {user.elo}</span>
                     </div>
 
-                    {/* Avatar — click to go to Profile page */}
                     <div onClick={handleProfileClick} className="cursor-pointer hover:scale-105 transition-transform">
                         <Avatar
                             avatarStr={user.avatar}
@@ -119,7 +87,6 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
                     </div>
                 </div>
 
-                {/* Settings button below the pill */}
                 <button
                     onClick={handleSettingsClick}
                     className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-600 bg-slate-900/60 text-xs text-slate-300 hover:border-cyan-400 hover:text-cyan-400 transition-all hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]"
@@ -132,7 +99,6 @@ export const UserProfileBadge = ({user, onLogout}: UserProfileBadgeProps) => {
                 </button>
             </div>
 
-            {/* Logout confirmation modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-100 flex items-center justify-center p-4">
                     <div className="bg-slate-900 border-2 border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_40px_rgba(248,113,113,0.3)] text-center animate-bounce-in">

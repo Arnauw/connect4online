@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'app:cleanup-stale-games',
-    description: 'Delete games with no activity for over 1 hour.',
+    description: 'Delete games with no activity for over 1 hour or game with activity for more than 48h (they need to go sleep or stop botting).',
 )]
 class CleanupStaleGamesCommand extends Command
 {

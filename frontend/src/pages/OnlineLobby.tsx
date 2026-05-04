@@ -1,29 +1,3 @@
-/**
- * OnlineLobby Page
- *
- * Entry point for online multiplayer — lets players host or join a game.
- *
- * UI states (MenuMode):
- * - "select": Initial screen with "Host New Match" and "Join via Code" buttons
- * - "host":   Waiting screen showing the room code + spinner, listening for opponent via Mercure
- * - "join":   Text input screen where opponent types the 6-character room code
- *
- * Host flow:
- * 1. POST /api/game/create → backend returns a 6-char room code
- * 2. A Mercure SSE subscription is opened on that room's topic
- * 3. When opponent joins, backend publishes GAME_STARTED → host navigates to /online/:code
- *
- * Host cleanup (important edge case):
- * - If the host navigates away before a game starts, we cancel the room via /api/game/:code/leave
- * - `gameStartedRef` prevents this cleanup from firing when the host navigates to the game
- *   (i.e., the component unmounts because navigation happened AFTER GAME_STARTED, not before)
- *
- * Join flow:
- * 1. User enters 6-char code and submits
- * 2. POST /api/game/join/:code → backend assigns them as Player 2 + broadcasts GAME_STARTED
- * 3. Joiner navigates to /online/:code
- */
-
 import {useState, useEffect, useRef, type FormEvent} from "react";
 import {useNavigate} from "react-router-dom";
 import toast from "react-hot-toast";
@@ -45,9 +19,9 @@ export const OnlineLobby = () => {
     const [copied, setCopied] = useState(false);
     const { activeRoom, setActiveRoom } = useAuth();
 
-    // Tracks whether the game started legitimately (opponent joined).
-    // Without this, navigating to /online/:code on GAME_STARTED would trigger
-    // the cleanup effect and call /leave on the newly-started game.
+    // Whether the game actually started (opponent joined).
+    // Without this flag, the cleanup effect would fire on navigation to /online/:code
+    // and call /leave right after the game just started.
     const gameStartedRef = useRef(false);
 
     const handleCopyCode = () => {
@@ -57,7 +31,6 @@ export const OnlineLobby = () => {
         setTimeout(() => setCopied(false), 3000);
     };
 
-    /** Create a new game room on the backend and enter host waiting mode */
     const handleHostGame = async () => {
         if (activeRoom) {
             toast.error("You already have an active room! Leave it first.");
@@ -83,7 +56,6 @@ export const OnlineLobby = () => {
         }
     };
 
-    /** Cancel the hosted room: call /leave on backend, clear local state */
     const handleCancelHost = async () => {
         if (!roomCode) return;
 
@@ -104,7 +76,6 @@ export const OnlineLobby = () => {
         }
     };
 
-    /** Listen via Mercure SSE for when an opponent joins the hosted room */
     useEffect(() => {
         if (mode !== "host" || !roomCode) return;
 
@@ -137,9 +108,9 @@ export const OnlineLobby = () => {
         };
     }, [mode, roomCode, navigate]);
 
-    // Cleanup: if user navigates away while still hosting (before any opponent joined),
-    // cancel the room on the backend so it doesn't sit in WAITING state forever.
-    // gameStartedRef guards against false-firing when navigating TO the game.
+    // If the user bails while still waiting for someone to join,
+    // kill the room on the backend so it doesn't linger in WAITING forever.
+    // gameStartedRef stops us from cancelling a game that literally just started.
     useEffect(() => {
         return () => {
             if (mode === "host" && roomCode && !gameStartedRef.current) {
@@ -151,7 +122,6 @@ export const OnlineLobby = () => {
         };
     }, [mode, roomCode, setActiveRoom]);
 
-    /** Submit the join form: validate code, call /api/game/join/:code, navigate to board */
     const handleJoinGame = async (e?: FormEvent) => {
         if (e) e.preventDefault();
 
@@ -195,7 +165,6 @@ export const OnlineLobby = () => {
                     </div>
                 )}
 
-                {/* STATE 1: Initial selection */}
                 {mode === "select" && (
                     <>
                         <p className="text-slate-400 text-sm mb-4">Establish a new connection or join an existing grid.</p>
@@ -208,12 +177,10 @@ export const OnlineLobby = () => {
                     </>
                 )}
 
-                {/* STATE 2: Host waiting for opponent — shows room code + Mercure listening */}
                 {mode === "host" && (
                     <div className="flex flex-col items-center gap-6 w-full">
                         <p className="text-slate-400 text-sm">Share this uplink code with your opponent:</p>
 
-                        {/* Clickable room code box — copies to clipboard on click */}
                         <div
                             onClick={handleCopyCode}
                             className="bg-slate-950 border-2 border-cyan-400 rounded-lg pt-6 pb-4 px-8 shadow-[0_0_20px_rgba(34,211,238,0.3)] cursor-pointer hover:bg-cyan-950/30 transition-colors group flex flex-col items-center min-w-[250px]"
@@ -252,7 +219,6 @@ export const OnlineLobby = () => {
                     </div>
                 )}
 
-                {/* STATE 3: Join via code input */}
                 {mode === "join" && (
                     <form onSubmit={handleJoinGame} className="flex flex-col items-center gap-6 w-full">
                         <p className="text-slate-400 text-sm">Enter the 6-digit uplink code.</p>

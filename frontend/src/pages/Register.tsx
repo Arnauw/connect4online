@@ -1,18 +1,3 @@
-/**
- * Register Page
- *
- * Registration form — collects email, username, and password.
- * Validates client-side before submitting to POST /api/register.
- *
- * On success, redirects to /login with a "check your email" success message.
- * The user must click the verification link before they can log in.
- *
- * Inline validation feedback:
- * - Email: shown after blur if invalid
- * - Username: shown after blur if invalid (3-20 chars, letters/numbers/hyphens/underscores)
- * - Password: live requirements checklist via PasswordRequirements component
- */
-
 import { type ChangeEvent, type FormEvent, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -23,31 +8,24 @@ import { TopNavButton } from "../components/ui/TopNavButton";
 import { PasswordRequirements } from "../components/ui/PasswordRequirements";
 import { validateEmail, validateUsername, validatePassword } from "../utils/validation";
 
-interface RegisterFormData {
-    email: string;
-    username: string;
-    password: string;
-}
-
 export const Register = () => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState<RegisterFormData>({ email: "", username: "", password: "" });
+    const [formData, setFormData] = useState({ email: "", username: "", password: "" });
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
 
-    // Track whether each field has been touched so we only show errors after blur
+    // Only show field errors after the user has touched the field (blur)
     const [emailTouched, setEmailTouched] = useState(false);
     const [usernameTouched, setUsernameTouched] = useState(false);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        setError(""); // Clear server-side error when user edits
+        setError("");
     };
 
     const handleSubmit = async (e?: FormEvent) => {
         if (e) e.preventDefault();
 
-        // Run all validations before hitting the API
         if (!validateEmail(formData.email)) {
             toast.error('Please enter a valid email address');
             return;
@@ -70,7 +48,6 @@ export const Register = () => {
 
         try {
             const response = await api.post(`${import.meta.env.VITE_API_URL}/api/register`, formData);
-            console.log("Registration Success:", response.data);
 
             toast.success('Registration successful! Check your email to verify your account.');
 
@@ -83,7 +60,7 @@ export const Register = () => {
             });
 
         } catch (err: any) {
-            console.error("Full Error Object:", err);
+            console.error(err);
 
             if (err.response) {
                 if (err.response.data && err.response.data.error) {
@@ -120,7 +97,6 @@ export const Register = () => {
                 onSubmit={handleSubmit}
                 className="flex flex-col gap-6 w-full max-w-md bg-slate-900/50 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(168,85,247,0.15)]"
             >
-                {/* Email with inline validation after blur */}
                 <div>
                     <NeonInput
                         label="Email"
@@ -136,7 +112,6 @@ export const Register = () => {
                     )}
                 </div>
 
-                {/* Username with inline validation after blur */}
                 <div>
                     <NeonInput
                         label="Username"
@@ -154,7 +129,6 @@ export const Register = () => {
                     )}
                 </div>
 
-                {/* Password with live requirements checklist */}
                 <div>
                     <NeonInput
                         label="Password"
@@ -166,7 +140,6 @@ export const Register = () => {
                     <PasswordRequirements password={formData.password} />
                 </div>
 
-                {/* Server-side error (e.g. email already in use) */}
                 {error && (
                     <div className="text-red-500 font-bold text-center animate-pulse bg-red-950/30 p-2 rounded border border-red-500/50">
                         {error}

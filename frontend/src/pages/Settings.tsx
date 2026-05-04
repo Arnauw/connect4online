@@ -1,33 +1,3 @@
-/**
- * Settings Page
- *
- * Unified settings page for both logged-in users and guests.
- *
- * For logged-in users:
- * - Shows avatar upload/delete controls
- * - Saves settings to the backend via PATCH /api/me/settings
- * - Settings are synced across devices on next login (stored in JWT payload)
- *
- * For guests:
- * - Shows a guest banner instead of avatar section
- * - Saves settings to localStorage via updateGuestSettings()
- *
- * Avatar handling:
- * - Client validates file type (JPG/PNG/WEBP) and size (max 10MB) before uploading
- * - Server then optimizes (resizes to 500px max) before saving
- * - Delete resets avatar back to "default-avatar.jpg" and removes the file from disk
- *
- * Danger Zone:
- * - Two-step confirmation: "Danger Zone" link → modal → DeleteAccountModal
- * - Calls DELETE /api/me → backend deletes user + avatar file → removes token from localStorage and reloads page
- *
- * Avatar URL resolution (getAvatarSrc):
- * - null/default → no image (fallback SVG used in Avatar component)
- * - starts with http → absolute URL (CDN etc.)
- * - starts with / → prepend API base URL
- * - otherwise → assumed to be a filename in /uploads/avatars/
- */
-
 import { useState, useRef, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -38,25 +8,25 @@ import { NeonToggle } from "../components/ui/NeonToggle";
 import { NeonSlider } from "../components/ui/NeonSlider";
 import { TopNavButton } from "../components/ui/TopNavButton";
 import { DeleteAccountModal } from "../components/ui/DeleteAccountModal";
+import { getAvatarUrl } from "../components/ui/Avatar";
 
 export const Settings = () => {
     const { user, token, settings: activeSettings, updateUser, updateGuestSettings } = useAuth();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Local copy of settings for the form — synced from context on load
     const [localSettings, setLocalSettings] = useState<UserSettings>(activeSettings);
     const [saving, setSaving] = useState<boolean>(false);
-    const [imgError, setImgError] = useState(false);          // Avatar image failed to load
+    const [imgError, setImgError] = useState(false);
     const [uploading, setUploading] = useState<boolean>(false);
     const [uploadError, setUploadError] = useState<string>("");
     const [avatarSuccess, setAvatarSuccess] = useState<boolean>(false);
-    const [deleting, setDeleting] = useState<boolean>(false);  // Deleting avatar
+    const [deleting, setDeleting] = useState<boolean>(false);
     const [showDangerZone, setShowDangerZone] = useState<boolean>(false);
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
     const [deletingAccount, setDeletingAccount] = useState<boolean>(false);
 
-    // Keep form in sync if context settings change externally (e.g. after API response on mount)
+    // Keep form in sync if context settings change from outside, like after the API response lands on mount
     useEffect(() => {
         setLocalSettings(activeSettings);
         setImgError(false);
@@ -66,26 +36,23 @@ export const Settings = () => {
         setLocalSettings(prev => ({ ...prev, [key]: value }));
     };
 
-    /** Open native file picker when avatar is clicked */
     const handleAvatarClick = () => {
         fileInputRef.current?.click();
     };
 
-    /** Handle avatar file selection: validate locally, then upload */
     const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
 
         const file = e.target.files[0];
 
         // Client-side size check (server also checks, but this gives faster feedback)
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
             setUploadError("File too large. Maximum size is 10MB.");
             toast.error("File too large. Maximum size is 10MB.");
             return;
         }
 
-        // Client-side MIME type check
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!validTypes.includes(file.type)) {
             setUploadError("Invalid file type. Please upload JPG, PNG, or WEBP.");
@@ -105,7 +72,7 @@ export const Settings = () => {
             });
 
             setImgError(false);
-            updateUser({ avatar: response.data.avatarUrl });  // Update AuthContext immediately
+            updateUser({ avatar: response.data.avatarUrl });
             setAvatarSuccess(true);
             toast.success("Avatar uploaded successfully!");
 
@@ -126,7 +93,6 @@ export const Settings = () => {
         fileInputRef.current?.click();
     };
 
-    /** Delete the custom avatar and reset to default */
     const handleDeleteAvatar = async () => {
         if (!user) return;
 
@@ -145,7 +111,6 @@ export const Settings = () => {
         }
     };
 
-    /** Permanently delete the user's account */
     const handleDeleteAccount = async () => {
         if (!user) return;
 
@@ -165,7 +130,6 @@ export const Settings = () => {
         }
     };
 
-    /** Save settings — to backend for logged-in users, localStorage for guests */
     const handleSave = async (e?: FormEvent) => {
         if (e) e.preventDefault();
 
@@ -174,7 +138,7 @@ export const Settings = () => {
         try {
             if (user && token) {
                 await api.patch("/api/me/settings", localSettings);
-                updateUser({ settings: localSettings });  // Update context so UI reflects immediately
+                updateUser({ settings: localSettings });
                 toast.success("Settings saved to server!");
             } else {
                 updateGuestSettings(localSettings);
@@ -187,15 +151,7 @@ export const Settings = () => {
         }
     };
 
-    /** Resolve avatar filename to a full URL, or null if using default */
-    const getAvatarSrc = () => {
-        if (!user?.avatar || user.avatar === "default-avatar.jpg") return null;
-        if (user.avatar.startsWith('http')) return user.avatar;
-        if (user.avatar.startsWith('/')) return `${import.meta.env.VITE_API_URL}${user.avatar}`;
-        return `${import.meta.env.VITE_API_URL}/uploads/avatars/${user.avatar}`;
-    };
-
-    const avatarSrc = getAvatarSrc();
+    const avatarSrc = getAvatarUrl(user?.avatar);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-8">
@@ -210,10 +166,8 @@ export const Settings = () => {
                 onSubmit={handleSave}
                 className="flex flex-col gap-6 w-full max-w-md bg-slate-900/80 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.1)]"
             >
-                {/* AVATAR SECTION — only shown to logged-in users */}
                 {user && (
                     <div className="flex flex-col items-center gap-4 pb-6 border-b border-slate-700">
-                        {/* Clickable avatar circle with upload/uploading/success states */}
                         <div
                             onClick={uploading ? undefined : handleAvatarClick}
                             className={`relative w-24 h-24 rounded-full border-2 ${
@@ -256,7 +210,6 @@ export const Settings = () => {
                             )}
                         </div>
 
-                        {/* Hidden file input — triggered by clicking avatar circle above */}
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -307,14 +260,12 @@ export const Settings = () => {
                     </div>
                 )}
 
-                {/* Guest banner — shown instead of avatar section */}
                 {!user && (
                     <div className="bg-slate-800/50 p-4 rounded-lg text-center border border-slate-700">
                         <p className="text-slate-400 text-xs">You are configuring local Guest preferences. Log in to sync settings across devices.</p>
                     </div>
                 )}
 
-                {/* AUDIO SETTINGS */}
                 <div className="space-y-4 border-b border-slate-700 pb-6">
                     <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Audio Protocol</h3>
                     <NeonSlider
@@ -334,7 +285,6 @@ export const Settings = () => {
                     />
                 </div>
 
-                {/* VISUALS SETTINGS */}
                 <div className="space-y-4">
                     <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Visuals</h3>
                     <div className="flex justify-between items-center p-2">
@@ -350,7 +300,6 @@ export const Settings = () => {
                     </div>
                 </div>
 
-                {/* SAVE / CANCEL */}
                 <div className="flex flex-col gap-3 mt-4">
                     <MenuButton type="submit">
                         {saving ? "SAVING..." : "APPLY CHANGES"}
@@ -364,7 +313,6 @@ export const Settings = () => {
                     </button>
                 </div>
 
-                {/* DANGER ZONE link — only for logged-in users */}
                 {user && (
                     <div className="pt-4 border-t border-slate-700">
                         <button
@@ -379,7 +327,6 @@ export const Settings = () => {
 
             </form>
 
-            {/* DANGER ZONE MODAL — first confirmation step */}
             {showDangerZone && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
                     <div className="bg-slate-900 border-2 border-red-900/50 shadow-[0_0_30px_rgba(239,68,68,0.3)] rounded-2xl p-6 max-w-md w-full space-y-6 animate-scaleIn">
@@ -402,7 +349,6 @@ export const Settings = () => {
                             </p>
                         </div>
 
-                        {/* Advance to second confirmation step (DeleteAccountModal) */}
                         <button
                             type="button"
                             onClick={() => { setShowDangerZone(false); setShowDeleteModal(true); }}
@@ -422,25 +368,11 @@ export const Settings = () => {
                 </div>
             )}
 
-            {/* DELETE ACCOUNT MODAL — final confirmation step */}
             <DeleteAccountModal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={handleDeleteAccount}
-                title="⚠️ Delete Account"
-                message={
-                    <>
-                        <p className="font-bold text-red-400 mb-2">ARE YOU ABSOLUTELY SURE?</p>
-                        <p className="mb-2">This operation is permanent and irreversible.</p>
-                        <p className="text-xs text-slate-400">
-                            All your data, including game history, statistics, and settings will be permanently deleted.
-                        </p>
-                    </>
-                }
-                confirmText="YES, DELETE MY ACCOUNT"
-                cancelText="No, Keep My Account"
                 isLoading={deletingAccount}
-                variant="danger"
             />
         </div>
     );

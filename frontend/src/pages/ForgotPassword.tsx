@@ -1,17 +1,3 @@
-/**
- * ForgotPassword Page
- *
- * "Account Recovery" — lets the user request a password reset email.
- * POSTs the email to /api/reset-password/request.
- *
- * The backend always returns the same generic success message regardless of
- * whether the email exists, to prevent user enumeration attacks.
- *
- * UI behavior:
- * - After a successful request, the form is hidden and only the success message shows
- * - This prevents the user from re-submitting unnecessarily
- */
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../api/axios";
@@ -33,7 +19,6 @@ export const ForgotPassword = () => {
 
         try {
             await api.post(`${import.meta.env.VITE_API_URL}/api/reset-password/request`, { email });
-            // Backend always returns this regardless of whether email exists (anti-enumeration)
             setMessage("If an account matches that email, a recovery link has been sent.");
         } catch (err: any) {
             console.error(err);
@@ -70,7 +55,6 @@ export const ForgotPassword = () => {
                     </div>
                 )}
 
-                {/* Hide form after successful submission — no need to re-send */}
                 {!message && (
                     <>
                         <NeonInput

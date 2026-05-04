@@ -1,22 +1,3 @@
-/**
- * MenuButton Component
- *
- * The primary button used throughout the app for navigation and actions.
- * Plays a click sound effect on every click via useSoundEffect.
- *
- * Variants:
- * - Default (secondary=false): Cyan glowing neon border with hover glow effect
- * - Secondary (secondary=true): Subtle slate border for less prominent actions
- *
- * Props:
- * - children:   Button label content
- * - onClick:    Click handler (undefined disables the click action without disabling visually)
- * - secondary:  Use the subdued secondary style
- * - type:       HTML button type (default "button" to avoid accidental form submissions)
- * - className:  Additional Tailwind classes to override or extend styles
- * - disabled:   Grays out the button and prevents interaction
- */
-
 import type {ReactNode} from "react";
 import {useSoundEffect} from "../../hooks/useSoundEffect";
 import clickSfx from "../../assets/sounds/sfx/click.ogg";

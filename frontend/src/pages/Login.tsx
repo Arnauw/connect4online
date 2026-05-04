@@ -1,19 +1,3 @@
-/**
- * Login Page
- *
- * Authenticates the user with email + password via POST /api/login_check.
- * On success, stores the JWT access token and refresh token in localStorage
- * and calls AuthContext.login() to update global state.
- *
- * Query param handling on mount:
- * - ?verified=true  → User just clicked the verification email link
- * - ?error=invalid_token → Email verification link was expired or tampered
- * - ?error=session_expired → JWT refresh failed, user was logged out
- *
- * Navigation state handling:
- * - state.successMessage → Success message passed from another page (e.g. after registration)
- */
-
 import {useState, useEffect, useRef} from "react";
 import {useNavigate, Link, useLocation, useSearchParams} from "react-router-dom";
 import toast from "react-hot-toast";
@@ -35,9 +19,7 @@ export const Login = () => {
     const [success, setSuccess] = useState<string>("");
     const paramHandledRef = useRef(false);
 
-    // Handle feedback messages from query params or navigation state on mount
     useEffect(() => {
-        // Message passed via navigate("/login", { state: { successMessage: "..." } })
         if (location.state && location.state.successMessage) {
             setSuccess(location.state.successMessage);
             toast.success(location.state.successMessage, { duration: 6000 });
@@ -47,8 +29,7 @@ export const Login = () => {
         const verified = searchParams.get("verified");
         const errorParam = searchParams.get("error");
 
-        // Guard: only handle URL params once — prevents double-fire from strict mode
-        // or effect re-running after navigate() changes location
+        // only handle URL params once, prevents double-fire in strict mode
         if (!(verified || errorParam) || paramHandledRef.current) return;
         paramHandledRef.current = true;
 
@@ -81,7 +62,6 @@ export const Login = () => {
         setError("");
         setSuccess("");
 
-        // Client-side validation before hitting the API
         if (!validateEmail(email)) {
             toast.error('Please enter a valid email address');
             return;
@@ -98,9 +78,7 @@ export const Login = () => {
                 { email, password }
             );
 
-            // Store refresh token separately
             localStorage.setItem("refresh_token", response.data.refresh_token);
-            // Store access token via AuthContext and also saves to localStorage
             login(response.data.token);
             toast.success('Welcome back!');
             navigate("/");

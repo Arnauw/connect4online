@@ -1,23 +1,9 @@
-/**
- * NeonSlider Component
- *
- * A styled range slider with a cyan accent and live value display.
- * Used in Settings for the Master Volume control.
- *
- * Props:
- * - label:    Text label above the slider
- * - value:    Current numeric value (shown as percentage next to label)
- * - min:      Minimum value (default 0)
- * - max:      Maximum value (default 100)
- * - onChange: Called with the new number value when slider moves
- */
-
 interface NeonSliderProps {
     label: string;
     value: number;
     min?: number;
     max?: number;
-    onChange: (val: number) => void;
+    onChange: (newValue: number) => void;
 }
 
 export const NeonSlider = ({ label, value, min = 0, max = 100, onChange }: NeonSliderProps) => {

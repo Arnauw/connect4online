@@ -1,22 +1,3 @@
-/**
- * ResetPassword Page
- *
- * Handles the password reset form after the user clicked the email link.
- * The reset token is parsed from the URL query string: ?token=xxx
- *
- * Flow:
- * 1. User clicks link in email → lands here with ?token=...
- * 2. User enters new password + confirmation
- * 3. POST /api/reset-password/reset with token + password
- * 4. On success, redirects to /login with a success message
- *
- * Safety:
- * - If no token in URL, immediately redirects to /login
- * - Returns null during render if token is missing (avoids flash of form)
- * - Validates password strength client-side (matches registration requirements)
- * - Backend also validates strength server-side in ResetPasswordController
- */
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/axios";
@@ -28,13 +9,12 @@ import { validatePassword } from "../utils/validation";
 export const ResetPassword = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const token = searchParams.get("token");  // Token from the email link
+    const token = searchParams.get("token");
     const [password, setPassword] = useState<string>("");
     const [confirmPassword, setConfirmPassword] = useState<string>("");
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
 
-    // Guard: redirect immediately if page was loaded without a valid token
     useEffect(() => {
         if (!token) {
             navigate("/login", { state: { error: "Missing Reset Token." } });
@@ -81,7 +61,6 @@ export const ResetPassword = () => {
         }
     };
 
-    // Don't render the form if there's no token — effect above will redirect
     if (!token) return null;
 
     return (

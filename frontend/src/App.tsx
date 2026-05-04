@@ -1,17 +1,3 @@
-/**
- * App - Root Router
- *
- * Defines the entire client-side routing tree using React Router.
- * Uses HashRouter so all navigation happens via the URL hash (#/route),
- * which means the server always receives "/" — no server-side routing config needed.
- *
- * Route structure:
- * - All routes are wrapped in LayoutWrapper (applies PageLayout: background, nav bar, audio)
- * - Most routes are public (no auth required)
- * - /profile is protected — redirects to /login if no token
- * - Catch-all (*) redirects unknown URLs back to home
- */
-
 import './App.css'
 import {HashRouter, Navigate, Outlet, Route, Routes} from "react-router-dom";
 import {Toaster} from "react-hot-toast";
@@ -30,7 +16,6 @@ import {ProtectedRoute} from "./components/auth/ProtectedRoute.tsx";
 import {OnlineGame} from "./pages/OnlineGame.tsx";
 import {PrivacyPolicy} from "./pages/PrivacyPolicy.tsx";
 
-/** Wraps all routes in the shared PageLayout (background image, audio, nav badge) */
 const LayoutWrapper = () => {
     return (
         <PageLayout>
@@ -65,7 +50,6 @@ function App() {
             <HashRouter>
                 <Routes>
                     <Route element={<LayoutWrapper/>}>
-                        {/* Public routes */}
                         <Route path="/" element={<Home/>}/>
                         <Route path="/local1p" element={<LocalGame1P/>}/>
                         <Route path="/local2p" element={<LocalGame2P/>}/>
@@ -79,7 +63,6 @@ function App() {
                         <Route path="/privacy" element={<PrivacyPolicy/>} />
                         <Route path="*" element={<Navigate to="/" replace />} />
 
-                        {/* Protected routes - require valid JWT token */}
                         <Route element={<ProtectedRoute/>}>
                             <Route path="/profile" element={<Profile/>}/>
                         </Route>

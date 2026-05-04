@@ -1,17 +1,3 @@
-/**
- * Home Page
- *
- * Main menu — entry point for all game modes.
- *
- * If the user has an active online room (stored in AuthContext from a previous session),
- * a pulsing "REJOIN" button appears so they can return to an in-progress game.
- *
- * Game mode buttons:
- * - LOCAL 1-P VS BOT  → /local1p  (single player against AI)
- * - LOCAL 2-P         → /local2p  (two players on same device)
- * - PLAY ONLINE       → /online   (online lobby, requires account)
- */
-
 import {useNavigate} from "react-router-dom";
 import {MenuButton} from "../components/ui/MenuButton";
 import logoFull from "../assets/imgs/full-logo-text.svg";
@@ -34,7 +20,6 @@ export const Home = () => {
 
             <div className="flex flex-col gap-4 w-full max-w-sm items-center z-20">
 
-                {/* Rejoin button only appears when the user has an unfinished online match */}
                 {activeRoom && (
                     <div className="w-full mb-4 animate-pulse">
                         <MenuButton

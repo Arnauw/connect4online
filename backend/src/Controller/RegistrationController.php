@@ -1,22 +1,5 @@
 <?php
 
-/**
- * RegistrationController
- *
- * Handles user account creation and email verification.
- *
- * Flow:
- * 1. Frontend POSTs email/username/password to /api/register
- * 2. Backend validates fields, hashes password, creates user (unverified)
- * 3. Sends verification email with a signed URL (SymfonyCasts VerifyEmail)
- * 4. User clicks link → GET /api/verify → sets isVerified=true → redirects to login page
- *
- * Security notes:
- * - Password is validated server-side (length, uppercase, lowercase, digit)
- * - Email uniqueness is enforced before user creation
- * - Unverified users cannot log in (enforced by UserChecker)
- */
-
 namespace App\Controller;
 
 use App\Entity\User;
@@ -37,23 +20,6 @@ use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
 
 class RegistrationController extends AbstractController
 {
-    /**
-     * POST /api/register
-     *
-     * Creates a new user account and sends a verification email.
-     *
-     * Request body: { "email": string, "username": string, "password": string }
-     *
-     * Password requirements (validated server-side to match frontend):
-     * - At least 8 characters
-     * - At least one uppercase letter
-     * - At least one lowercase letter
-     * - At least one digit
-     *
-     * Returns 201 on success, 400 on validation errors, 409 if email already in use.
-     *
-     * @throws TransportExceptionInterface if email delivery fails
-     */
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     public function register(
         Request                     $req,
@@ -65,7 +31,6 @@ class RegistrationController extends AbstractController
         #[Autowire(env: 'MAILER_REG_FROM_NAME')]  string $fromName,
     ): JsonResponse
     {
-        // Parse and validate JSON body
         try {
             $data = json_decode($req->getContent(), true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
@@ -99,13 +64,12 @@ class RegistrationController extends AbstractController
             return $this->json(['error' => 'Password must contain at least one number'], 400);
         }
 
-        // Check email uniqueness before creating the user
         $userExists = $em->getRepository(User::class)->findOneBy(['email' => $email]);
         if ($userExists) {
             return $this->json(['error' => 'Email already exists'], 409);
         }
 
-        // Create the user — isVerified=false until they click the email link
+        // stays false until they click the link in the verification email
         $user = new User();
         $user->setEmail($email);
         $user->setUsername($username);
@@ -115,8 +79,7 @@ class RegistrationController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        // Generate a signed verification URL containing user ID and email as query params
-        // The signature expires after the time configured in config/packages/verify_email.yaml
+        // build a signed URL with an expiry, the time window is in verify_email.yaml
         $signatureComponents = $verifyEmailHelper->generateSignature(
             'api_verify_email',  // Route name that handles the click
             $user->getId(),
@@ -124,7 +87,6 @@ class RegistrationController extends AbstractController
             ['id' => $user->getId()]
         );
 
-        // Send verification email using Twig template
         $email = new TemplatedEmail()
             ->from(new Address($fromEmail, $fromName))
             ->to($user->getEmail())
@@ -142,19 +104,6 @@ class RegistrationController extends AbstractController
         ], 201);
     }
 
-    /**
-     * GET /api/verify
-     *
-     * Handles the verification link click from the email.
-     * Validates the signed URL, marks the user as verified, then redirects to the login page.
-     *
-     * The signed URL contains: id, token, expires
-     * SymfonyCasts validates the signature, expiry, and that the email matches.
-     *
-     * Redirects to the React frontend with query params on success or failure:
-     * - Success: /#/login?verified=true
-     * - Failure: /#/login?error=missing_id|user_not_found|invalid_token
-     */
     #[Route('/api/verify', name: 'api_verify_email', methods: ['GET'])]
     public function verifyUserEmail(
         Request                    $request,
@@ -176,13 +125,13 @@ class RegistrationController extends AbstractController
         }
 
         try {
-            // Validates signature, expiry, and email binding
+            // checks the signature, expiry, and that the email still matches
             $verifyEmailHelper->validateEmailConfirmationFromRequest($request, $user->getId(), $user->getEmail());
         } catch (VerifyEmailExceptionInterface $e) {
             return $this->redirect($reactAppUri . '/#/login?error=invalid_token');
         }
 
-        // Mark account as verified — UserChecker will now allow login
+        // flip the flag so UserChecker lets them log in
         $user->setIsVerified(true);
         $entityManager->flush();
 

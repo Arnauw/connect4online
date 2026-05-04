@@ -1,13 +1,3 @@
-/**
- * PrivacyPolicy Page
- *
- * Static GDPR-compliant privacy policy page.
- * Covers: data collected, legal basis, retention, user rights, cookies, third parties.
- *
- * The footer link to this page is hidden when you're already on this page
- * (handled by the isPrivacyPage check in PageLayout).
- */
-
 import { useNavigate } from "react-router-dom";
 import { TopNavButton } from "../components/ui/TopNavButton";
 

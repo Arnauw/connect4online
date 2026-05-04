@@ -1,23 +1,7 @@
 <?php
 
-/**
- * GameControllerTest — Functional tests for the online game API.
- *
- * Uses Symfony's WebTestCase: each test sends real HTTP requests through the
- * full kernel (routing, security, controller, Doctrine). The DAMA DoctrineTestBundle
- * wraps every test in a transaction that is rolled back on teardown, so each test
- * starts with a clean database.
- *
- * Mercure Hub publish calls are real HTTP requests to the hub configured in .env.
- * These tests require Docker to be running (pnpm docker) so the Mercure hub is reachable.
- *
- * Covers:
- * - Authentication guard (unauthenticated → 401)
- * - Room lifecycle: create, join, leave (PLAYING forfeit)
- * - Business rules: cannot join own room
- * - Move validation: valid move, win detection
- * - Rematch flow: both players accept → game restarts
- */
+// DAMA DoctrineTestBundle wraps each test in a rolled-back transaction, so the DB is clean for each test.
+// Mercure publish calls hit the real hub, so Docker must be running (pnpm docker) for these tests.
 
 namespace App\Tests\Functional;
 
@@ -30,13 +14,11 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 #[Group('mercure')]
 class GameControllerTest extends WebTestCase
 {
-    /** Generate a real JWT token for a user so sequential auth switches work on the same client. */
     private function getToken(User $user): string
     {
         return static::getContainer()->get('lexik_jwt_authentication.jwt_manager')->create($user);
     }
 
-    /** Create and persist a minimal User entity for use in tests. */
     private function createUser(EntityManagerInterface $em, string $email, string $username): User
     {
         $user = new User();
@@ -49,7 +31,6 @@ class GameControllerTest extends WebTestCase
         return $user;
     }
 
-    /** Build and persist a Game entity in the given status. */
     private function createGame(
         EntityManagerInterface $em,
         User $player1,
@@ -71,11 +52,6 @@ class GameControllerTest extends WebTestCase
         return $game;
     }
 
-    // -------------------------------------------------------------------------
-    // Authentication guard
-    // -------------------------------------------------------------------------
-
-    /** Unauthenticated requests to any game endpoint must return 401. */
     public function testCreateGameUnauthenticated(): void
     {
         $client = static::createClient();
@@ -84,11 +60,6 @@ class GameControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
-    // -------------------------------------------------------------------------
-    // Create
-    // -------------------------------------------------------------------------
-
-    /** Creating a room returns 201, a room code, and persists the game in WAITING status. */
     public function testCreateGame(): void
     {
         $client = static::createClient();
@@ -114,11 +85,6 @@ class GameControllerTest extends WebTestCase
         self::assertNull($game->getPlayer2());
     }
 
-    // -------------------------------------------------------------------------
-    // Join
-    // -------------------------------------------------------------------------
-
-    /** Player 2 joining a WAITING room sets status to PLAYING and assigns them. */
     public function testJoinGame(): void
     {
         $client    = static::createClient();
@@ -141,7 +107,6 @@ class GameControllerTest extends WebTestCase
         self::assertSame($player2, $game->getPlayer2());
     }
 
-    /** The creator cannot join their own room. */
     public function testCannotJoinOwnRoom(): void
     {
         $client    = static::createClient();
@@ -159,11 +124,6 @@ class GameControllerTest extends WebTestCase
         self::assertSame('You cannot join your own room.', $data['error']);
     }
 
-    // -------------------------------------------------------------------------
-    // Move
-    // -------------------------------------------------------------------------
-
-    /** A valid move is accepted, the turn switches, and the board is updated in the DB. */
     public function testValidMove(): void
     {
         $client    = static::createClient();
@@ -184,13 +144,10 @@ class GameControllerTest extends WebTestCase
         $em->refresh($game);
         self::assertSame(2, $game->getCurrentTurn());
         $board = $game->getBoard();
-        self::assertSame(1, $board[5][3]); // gravity drops to bottom row
+        self::assertSame(1, $board[5][3]);
     }
 
     /**
-     * When a move completes a 4-in-a-row, the game status becomes FINISHED,
-     * the correct player is set as winner, and their score is incremented.
-     *
      * Setup: P1 already has three pieces stacked in column 0 (rows 5, 4, 3).
      * P1 drops into column 0 → piece lands at row 2 → vertical win.
      */
@@ -222,16 +179,6 @@ class GameControllerTest extends WebTestCase
         self::assertSame(0, $game->getScoreP2());
     }
 
-    // -------------------------------------------------------------------------
-    // Leave
-    // -------------------------------------------------------------------------
-
-    /**
-     * A player leaving during an active game triggers a forfeit:
-     * - Game becomes FINISHED
-     * - The other player is set as winner
-     * - Winner's score is incremented
-     */
     public function testLeavePlayingForfeits(): void
     {
         $client    = static::createClient();
@@ -253,10 +200,6 @@ class GameControllerTest extends WebTestCase
         self::assertSame(1, $game->getScoreP2());
         self::assertSame(0, $game->getScoreP1());
     }
-
-    // -------------------------------------------------------------------------
-    // Rematch
-    // -------------------------------------------------------------------------
 
     /**
      * Full rematch flow:
@@ -285,7 +228,7 @@ class GameControllerTest extends WebTestCase
         $em->persist($game);
         $em->flush();
 
-        // P1 requests rematch — game should not restart yet
+        // P1 requests rematch, game should not restart yet
         $client->loginUser($player1);
         $client->request('POST', '/api/game/RMAT/rematch');
         self::assertResponseIsSuccessful();
@@ -294,7 +237,7 @@ class GameControllerTest extends WebTestCase
         self::assertTrue($game->isP1WantsRematch());
         self::assertSame('FINISHED', $game->getStatus());
 
-        // P2 accepts — both agree → game restarts
+        // P2 accepts, both agreed so the game restarts
         $client->request('POST', '/api/game/RMAT/rematch', [], [], [
             'HTTP_AUTHORIZATION' => 'Bearer ' . $this->getToken($player2),
         ]);
@@ -305,7 +248,7 @@ class GameControllerTest extends WebTestCase
         self::assertSame('PLAYING', $game->getStatus());
         self::assertFalse($game->isP1WantsRematch());
         self::assertFalse($game->isP2WantsRematch());
-        self::assertSame(2, $game->getCurrentTurn()); // loser (P2) starts
-        self::assertSame(1, $game->getScoreP1());     // scores preserved
+        self::assertSame(2, $game->getCurrentTurn());
+        self::assertSame(1, $game->getScoreP1());
     }
 }

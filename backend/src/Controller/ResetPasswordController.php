@@ -1,26 +1,5 @@
 <?php
 
-/**
- * ResetPasswordController
- *
- * Handles the "Forgot Password" flow using SymfonyCasts ResetPassword bundle.
- *
- * Flow:
- * 1. User submits email to POST /api/reset-password/request
- * 2. If account exists, generates a reset token and sends email with reset link
- * 3. Frontend parses token from URL, user submits token + new password to POST /api/reset-password/reset
- * 4. Token validated → password updated → token consumed (single-use)
- *
- * Security notes:
- * - "If an account exists, an email has been sent" response prevents user enumeration
- * - Reset tokens are single-use (consumed on successful reset)
- * - Token expiry is configured in config/packages/reset_password.yaml
- *
- * Note: This controller was adapted from Symfony's standard form-based template
- * to work as a stateless JSON API. The original form/redirect logic is preserved
- * in comments for reference.
- */
-
 namespace App\Controller;
 
 use App\Entity\User;
@@ -52,20 +31,6 @@ class ResetPasswordController extends AbstractController
         #[Autowire(env: 'MAILER_FORGOT_FROM_NAME')]  private readonly string $fromName,
     ) {}
 
-    /**
-     * POST /api/reset-password/request
-     *
-     * Initiates the password reset flow.
-     * Looks up the user by email; if found, generates a reset token and sends the email.
-     *
-     * Always returns the same generic message regardless of whether the email exists —
-     * this prevents user enumeration attacks (attacker cannot tell if an account exists).
-     *
-     * Request body: { "email": string }
-     *
-     * @throws \JsonException if request body is not valid JSON
-     * @throws TransportExceptionInterface if email delivery fails
-     */
     #[Route('/request', name: 'app_forgot_password_request', methods: ['POST'])]
     public function request(Request $request, MailerInterface $mailer, TranslatorInterface $translator): JsonResponse
     {
@@ -75,18 +40,6 @@ class ResetPasswordController extends AbstractController
         return $this->processSendingPasswordResetEmail($email, $mailer, $translator);
     }
 
-    /**
-     * POST /api/reset-password/reset
-     *
-     * Validates the reset token and updates the user's password.
-     *
-     * Request body: { "token": string, "password": string }
-     *
-     * The token comes from the reset link in the email (parsed by the frontend).
-     * After a successful reset, the token is consumed and cannot be reused.
-     *
-     * @throws \JsonException if request body is not valid JSON
-     */
     #[Route('/reset', name: 'app_reset_password', methods: ['POST'])]
     public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, TranslatorInterface $translator): JsonResponse
     {
@@ -98,7 +51,7 @@ class ResetPasswordController extends AbstractController
             return $this->json(['error' => 'Missing token or password'], 400);
         }
 
-        // Enforce same password strength rules as registration (mirrors RegistrationController)
+        // same password rules as registration, keep them in sync
         if (strlen($plainPassword) < 8) {
             return $this->json(['error' => 'Password must be at least 8 characters long'], 400);
         }
@@ -113,8 +66,7 @@ class ResetPasswordController extends AbstractController
         }
 
         try {
-            // Validates the token and returns the associated User
-            // Throws ResetPasswordExceptionInterface if token is invalid, expired, or already used
+            // throws if the token is invalid, expired, or has already been used
             /** @var User $user */
             $user = $this->resetPasswordHelper->validateTokenAndFetchUser($token);
         } catch (ResetPasswordExceptionInterface $e) {
@@ -124,54 +76,42 @@ class ResetPasswordController extends AbstractController
         // Consume the token so it cannot be reused
         $this->resetPasswordHelper->removeResetRequest($token);
 
-        // Hash and save the new password
         $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
         $this->entityManager->flush();
 
         return $this->json(['message' => 'Password updated successfully.']);
     }
 
-    /**
-     * Looks up the user by email and sends a password reset email if found.
-     * Called by the request() endpoint above.
-     *
-     * Returns a generic success message regardless of whether an account was found
-     * to prevent user enumeration.
-     *
-     * @throws TransportExceptionInterface if email delivery fails
-     */
     private function processSendingPasswordResetEmail(
-    string $emailFormData,
-    MailerInterface $mailer,
-    TranslatorInterface $translator,
+        string $emailFormData,
+        MailerInterface $mailer,
+        TranslatorInterface $translator,
     ): JsonResponse
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy([
             'email' => $emailFormData,
         ]);
 
-        // Return generic response even when user not found — prevents email enumeration
+        // return the same generic response even if the user doesn't exist, prevents email enumeration
         if (!$user) {
             return $this->json(['message' => 'If an account exists, an email has been sent.']);
         }
 
         try {
-            // Generate a time-limited, single-use reset token
             $resetToken = $this->resetPasswordHelper->generateResetToken($user);
         } catch (ResetPasswordExceptionInterface $e) {
-            // Token generation may fail if a recent token already exists (throttle protection)
-            // Return generic message to avoid leaking this information
+            // throws when a token was already generated recently (rate limiting),
+            // return the same generic message so we don't accidentally reveal that
             return $this->json(['message' => 'If an account exists, an email has been sent.']);
         }
 
-        // Send email with reset link containing the token
         $email = new TemplatedEmail()
             ->from(new Address($this->fromEmail, $this->fromName))
             ->to((string)$user->getEmail())
             ->subject('Your password reset request')
             ->htmlTemplate('emails/reset_password.html.twig')
             ->context([
-                'resetToken' => $resetToken,  // Twig template uses this to build the reset URL
+                'resetToken' => $resetToken,
             ]);
         $mailer->send($email);
 

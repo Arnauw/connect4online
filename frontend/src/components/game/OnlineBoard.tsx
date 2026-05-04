@@ -1,36 +1,3 @@
-/**
- * OnlineBoard Component
- *
- * The active online game screen. Handles real-time multiplayer via Mercure SSE.
- *
- * Game flow:
- * 1. On mount, fetches current game state from GET /api/game/:roomCode
- * 2. Opens a Mercure SSE connection to listen for real-time updates
- * 3. Player moves are sent via POST /api/game/:roomCode/move
- * 4. Backend validates moves, updates DB, broadcasts events to all listeners
- *
- * Mercure event types handled:
- * - GAME_STARTED           → opponent joined mid-wait, reload to sync player numbers
- * - BOARD_UPDATED          → a move was played; update board, turn, status, scores
- * - REMATCH_REQUESTED      → one player clicked Rematch; update rematch status indicators
- * - GAME_RESTARTED         → both players accepted rematch; reset board for new game
- * - OPPONENT_LEFT          → opponent forfeited (left during PLAYING); show result
- * - PLAYER_LEFT_FINISHED_GAME → opponent left after a FINISHED game; show "PLAYER LEFT" bubble
- *
- * Leave behavior (important design decision):
- * - `/leave` is NEVER called automatically on unmount to avoid false forfeits
- *   (e.g. navigating to Settings and returning shouldn't count as leaving)
- * - `/leave` is ONLY called when the user explicitly confirms via the warning modal
- *
- * Rematch button:
- * - Hidden if opponent has left (they can't accept it anyway)
- * - Disabled after you've already requested (shows "AWAITING OPPONENT...")
- *
- * Sound:
- * - hasPlayedEndSoundRef prevents replaying the end-game sound on re-renders
- * - Sound is pre-skipped if page loads with a FINISHED game (restored session)
- */
-
 import {useState, useEffect, useRef} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {api} from "../../api/axios";
@@ -56,7 +23,6 @@ export const OnlineBoard = () => {
     const {user, setActiveRoom, setActiveGameStatus, settings} = useAuth();
     const playSound = useSoundEffect();
 
-    // Core game state
     const [board, setBoard] = useState<Cell[][]>([]);
     const [status, setStatus] = useState<string>("WAITING");
     const [currentTurn, setCurrentTurn] = useState<number>(1);
@@ -69,17 +35,14 @@ export const OnlineBoard = () => {
     const [score, setScore] = useState<PlayerScore>({p1: 0, p2: 0});
     const [rematchStatus, setRematchStatus] = useState<RematchStatus>({p1: false, p2: false});
 
-    // UI state
     const [showWarning, setShowWarning] = useState<boolean>(false);
     const [isLeaving, setIsLeaving] = useState(false);
     const [opponentHasLeft, setOpponentHasLeft] = useState(false);
     const [countdown, setCountdown] = useState<number | null>(null);
 
-    // Audio refs
     const endGameAudioRef = useRef<HTMLAudioElement | null>(null);
     const hasPlayedEndSoundRef = useRef<boolean>(false);
 
-    // EFFECT 1: Fetch initial game state from backend
     useEffect(() => {
         const fetchGame = async () => {
             try {
@@ -94,12 +57,11 @@ export const OnlineBoard = () => {
                 setScore({p1: res.data.scoreP1, p2: res.data.scoreP2});
                 setRematchStatus({p1: res.data.p1WantsRematch, p2: res.data.p2WantsRematch});
 
-                // Skip end-game sound if page is loaded with an already-finished game
+                // page loaded with a game already finished, don't play the sound retroactively
                 if (res.data.status === 'FINISHED') {
                     hasPlayedEndSoundRef.current = true;
                 }
 
-                // Determine which player "I" am based on myPlayerNum from backend
                 if (res.data.myPlayerNum === 1) {
                     setOpponentName(res.data.player2 || "Waiting...");
                     setMyAvatar(res.data.player1Avatar);
@@ -118,9 +80,8 @@ export const OnlineBoard = () => {
         fetchGame();
     }, [roomCode, navigate, setActiveGameStatus]);
 
-    // EFFECT 2: Cleanup on unmount — only clears activeGameStatus (does NOT call /leave)
-    // We intentionally do NOT call /leave here to avoid false forfeits when navigating
-    // to Settings, Profile, or refreshing the page mid-game
+    // No /leave on unmount on purpose, it would cause false forfeits any time
+    // the user navigates to Settings, Profile, or just refreshes mid-game
     useEffect(() => {
         return () => {
             setActiveGameStatus(null);
@@ -128,7 +89,6 @@ export const OnlineBoard = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // EFFECT 3: Mercure SSE — real-time game updates
     useEffect(() => {
         if (!roomCode) return;
 
@@ -146,12 +106,11 @@ export const OnlineBoard = () => {
             eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            // Opponent joined while we were on the board (rare) — reload to get correct player nums
+            // Opponent joined while we were already on the board (rare), reload to get the correct player nums
             if (data.type === 'GAME_STARTED') {
                 window.location.reload();
             }
 
-            // A move was played — update board and turn
             if (data.type === 'BOARD_UPDATED') {
                 playSound(dropSfx);
                 setBoard(data.board);
@@ -171,7 +130,6 @@ export const OnlineBoard = () => {
                 }
             }
 
-            // One player clicked Rematch — show indicator above opponent's button
             if (data.type === 'REMATCH_REQUESTED') {
                 setRematchStatus(prev => ({
                     ...prev,
@@ -180,7 +138,6 @@ export const OnlineBoard = () => {
                 }));
             }
 
-            // Both players accepted rematch — reset board for a new game
             if (data.type === 'GAME_RESTARTED') {
                 setBoard(data.board);
                 setCurrentTurn(data.currentTurn);
@@ -194,7 +151,6 @@ export const OnlineBoard = () => {
                 hasPlayedEndSoundRef.current = false;  // Allow sound to play for next game end
             }
 
-            // Opponent left during an in-progress game → forfeit, we win
             if (data.type === 'OPPONENT_LEFT') {
                 setBoard(data.board);
                 setCurrentTurn(data.currentTurn);
@@ -222,7 +178,6 @@ export const OnlineBoard = () => {
         };
     }, [roomCode, playSound, setActiveGameStatus, setActiveRoom, myPlayerNum]);
 
-    // EFFECT 4: Play end-game sound when game ends (once per game)
     useEffect(() => {
         if (status !== 'FINISHED' || isLeaving || hasPlayedEndSoundRef.current) return;
 
@@ -231,7 +186,6 @@ export const OnlineBoard = () => {
 
         hasPlayedEndSoundRef.current = true;
 
-        // Determine win/loss/draw relative to the current user's ID
         let soundFile: string;
         if (winnerId === user?.id) {
             soundFile = winSfx;
@@ -255,7 +209,6 @@ export const OnlineBoard = () => {
         };
     }, [status, winnerId, user?.id, isLeaving, settings.sfx, settings.volume]);
 
-    // EFFECT 5: Countdown auto-leave — ticks every second after opponent leaves
     useEffect(() => {
         if (countdown === null) return;
         if (countdown === 0) {
@@ -268,7 +221,6 @@ export const OnlineBoard = () => {
         return () => clearTimeout(timer);
     }, [countdown, roomCode, navigate, setActiveRoom]);
 
-    /** Send a move to the backend — server validates turn and updates game state */
     const handleDrop = async (colIndex: number) => {
         if (status !== 'PLAYING' || currentTurn !== myPlayerNum) return;
 
@@ -279,11 +231,10 @@ export const OnlineBoard = () => {
         }
     };
 
-    /** Request a rematch after a game ends — triggers REMATCH_REQUESTED or GAME_RESTARTED */
     const handleRematch = async () => {
         try {
             await api.post(`/api/game/${roomCode}/rematch`);
-            // Optimistic update: mark our own rematch flag without waiting for Mercure event
+            // Don't wait for Mercure, just mark our own rematch flag right away
             setRematchStatus(prev => ({
                 ...prev,
                 p1: myPlayerNum === 1 ? true : prev.p1,
@@ -294,7 +245,6 @@ export const OnlineBoard = () => {
         }
     };
 
-    /** Actually leave the match — called only after user confirms the modal */
     const executeLeaveMatch = async () => {
         hasPlayedEndSoundRef.current = true; // prevent end-game sound for the leaving player (ref is sync, no batching issues)
         setCountdown(null);
@@ -308,11 +258,6 @@ export const OnlineBoard = () => {
         navigate('/');
     };
 
-    /**
-     * Handle MENU / "Leave Match" button click.
-     * Always shows a confirmation modal for PLAYING (forfeit warning) and FINISHED states.
-     * Only skips confirmation for WAITING state (no game in progress yet).
-     */
     const handleLeaveClick = () => {
         if (status === 'PLAYING' || status === 'FINISHED') {
             setShowWarning(true);
@@ -321,13 +266,11 @@ export const OnlineBoard = () => {
         }
     };
 
-    // Show loading state while board is being fetched
     if (board.length === 0) return <div className="text-white text-center mt-20">Syncing to Grid...</div>;
 
     const isMyTurn = currentTurn === myPlayerNum;
     const amIWinner = winnerId === user?.id;
 
-    // Rematch button display logic
     const haveIRequestedRematch = (myPlayerNum === 1 && rematchStatus.p1) || (myPlayerNum === 2 && rematchStatus.p2);
     const opponentWantsRematch = (myPlayerNum === 1 && rematchStatus.p2) || (myPlayerNum === 2 && rematchStatus.p1);
 
@@ -336,16 +279,13 @@ export const OnlineBoard = () => {
 
             <TopNavButton label="MENU" onClick={handleLeaveClick} />
 
-            {/* Header: room code + scoreboard */}
             <div className="text-center space-y-2 mt-6 z-10 w-full flex flex-col items-center">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
                     ROOM: {roomCode}
                 </h1>
 
-                {/* Scoreboard with avatars and "PLAYER LEFT" bubble */}
                 <div className="flex items-center gap-4 md:gap-6 mt-4 bg-slate-900/60 px-4 md:px-6 py-2 rounded-full border border-slate-700 backdrop-blur-md shadow-lg">
 
-                    {/* Player 1 (Red) */}
                     <div className="flex items-center gap-3 relative">
                         <Avatar
                             avatarStr={myPlayerNum === 1 ? myAvatar : opponentAvatar}
@@ -355,7 +295,6 @@ export const OnlineBoard = () => {
                             <span className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 1 ? "You" : opponentName}</span>
                             <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_red]">{score.p1}</span>
                         </div>
-                        {/* Bubble appears when opponent (P1) has left a finished game */}
                         {myPlayerNum === 2 && opponentHasLeft && (
                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500/90 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-bounce whitespace-nowrap">
                                 PLAYER LEFT
@@ -365,7 +304,6 @@ export const OnlineBoard = () => {
 
                     <span className="text-slate-600 font-bold text-xl">-</span>
 
-                    {/* Player 2 (Yellow) */}
                     <div className="flex items-center gap-3 relative">
                         <div className="flex flex-col items-center min-w-[50px]">
                             <span className="text-[10px] text-slate-400 uppercase tracking-widest">{myPlayerNum === 2 ? "You" : opponentName}</span>
@@ -375,7 +313,6 @@ export const OnlineBoard = () => {
                             avatarStr={myPlayerNum === 2 ? myAvatar : opponentAvatar}
                             className="w-10 h-10 rounded-full border-2 border-yellow-400 shadow-[0_0_10px_yellow] text-yellow-400"
                         />
-                        {/* Bubble appears when opponent (P2) has left a finished game */}
                         {myPlayerNum === 1 && opponentHasLeft && (
                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500/90 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-bounce whitespace-nowrap">
                                 PLAYER LEFT
@@ -386,10 +323,8 @@ export const OnlineBoard = () => {
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="flex-1 flex flex-col justify-center items-center w-full gap-6 pb-8">
 
-                {/* Turn / Status indicator */}
                 <div className="min-h-[4rem] flex items-center justify-center my-2">
                     {status === 'WAITING' ? (
                         <div className="text-cyan-400 animate-pulse font-bold tracking-widest">
@@ -414,7 +349,6 @@ export const OnlineBoard = () => {
                     )}
                 </div>
 
-                {/* The game board */}
                 <BoardUI
                     board={board}
                     onDrop={handleDrop}
@@ -423,18 +357,16 @@ export const OnlineBoard = () => {
                     disabled={!isMyTurn && status === 'PLAYING'}
                 />
 
-                {/* Post-game actions (Rematch + Leave) vs in-game Leave button */}
                 {status === 'FINISHED' ? (
                     <div className="flex flex-col items-center gap-3 w-64 mt-4">
 
-                        {/* Hint: opponent has already requested a rematch */}
                         {!haveIRequestedRematch && !opponentHasLeft && opponentWantsRematch && (
                             <div className="text-cyan-400 font-bold text-sm animate-pulse mb-1 drop-shadow-[0_0_5px_cyan]">
                                 Opponent wants a rematch!
                             </div>
                         )}
 
-                        {/* Rematch button — hidden if opponent already left (no one to accept) */}
+                        {/* Rematch button, hidden if opponent already left since there's no one to accept */}
                         {!opponentHasLeft && (
                             <MenuButton
                                 onClick={haveIRequestedRematch ? undefined : handleRematch}
@@ -457,14 +389,12 @@ export const OnlineBoard = () => {
                 )}
             </div>
 
-            {/* Countdown banner — shown when opponent leaves, auto-redirects to home */}
             {countdown !== null && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-red-500/60 text-red-400 px-6 py-3 rounded-full font-bold text-sm shadow-[0_0_20px_rgba(220,38,38,0.3)] z-50 whitespace-nowrap">
-                    Opponent left — returning to lobby in {countdown}s
+                    Opponent left, returning to lobby in {countdown}s
                 </div>
             )}
 
-            {/* Leave confirmation modal — text adapts based on game status and opponent state */}
             {showWarning && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-slate-900 border-2 border-red-500 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_40px_rgba(220,38,38,0.4)] text-center animate-bounce-in">

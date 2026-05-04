@@ -1,24 +1,3 @@
-/**
- * BoardUI Component
- *
- * Renders the Connect4 game board as a 6x7 grid of circular cells.
- *
- * Visual rules:
- * - Cell 0: empty (dark circle)
- * - Cell 1: Player 1 / Red (glowing red)
- * - Cell 2: Player 2 / Yellow (glowing yellow)
- * - Winning cells: pulse animation (animate-victory)
- * - Non-winning filled cells after game over: dimmed + grayscale
- * - Disabled or game-over: pointer-events blocked + slight opacity
- *
- * Props:
- * - board:       2D array of Cells (0/1/2), drives the visual state
- * - onDrop:      Called with column index when user clicks a cell
- * - winningLine: Array of [row, col] pairs to highlight the winning 4 cells
- * - isGameOver:  Disables drops and dims non-winning cells
- * - disabled:    Additional disable flag (e.g. not your turn in online mode)
- */
-
 import type { Cell } from "../../logic/Connect4.ts";
 
 const getCellClass = (cell: Cell): string => {
@@ -47,7 +26,7 @@ export const BoardUI = ({
             {board.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex">
                     {row.map((cell, colIndex) => {
-                        const isWinnerCell = winningLine?.some(([r, c]) => r === rowIndex && c === colIndex);
+                        const isWinnerCell = winningLine?.some(([winRow, winCol]) => winRow === rowIndex && winCol === colIndex);
                         const shouldDim = isGameOver && cell !== 0 && !isWinnerCell;
 
                         return (

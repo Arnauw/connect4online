@@ -1,13 +1,3 @@
-/**
- * Profile Page
- *
- * Displays the authenticated user's profile: username, email, ELO rating, and avatar.
- * Provides quick access to Settings and a Logout button.
- *
- * Access: Protected route — only reachable when logged in.
- * If accessed without auth (shouldn't happen due to ProtectedRoute), shows "Access Denied".
- */
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MenuButton } from "../components/ui/MenuButton";
@@ -19,7 +9,7 @@ export const Profile = () => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        logout();   // Clears token, user data, and active room from context + localStorage
+        logout();
         navigate("/");
     };
 
@@ -37,7 +27,6 @@ export const Profile = () => {
             <div className="bg-slate-900/80 p-8 rounded-2xl border-2 border-cyan-500/30 w-full max-w-md shadow-[0_0_30px_rgba(34,211,238,0.1)]">
                 <div className="flex flex-col gap-4 text-center">
 
-                    {/* Avatar — handles default fallback internally */}
                     <div className="mx-auto mb-4">
                         <Avatar
                             avatarStr={user.avatar}
@@ -49,7 +38,6 @@ export const Profile = () => {
                     <h2 className="text-3xl font-bold text-cyan-400">{user.username}</h2>
                     <div className="text-slate-400">{user.email}</div>
 
-                    {/* ELO rating — displayed prominently as the player's "rank" */}
                     <div className="flex justify-between items-center bg-slate-800 p-4 rounded-lg mt-4 border border-slate-600">
                         <span className="text-slate-300 font-bold uppercase tracking-widest">Rank (ELO)</span>
                         <span className="text-2xl font-black text-yellow-400 drop-shadow-[0_0_5px_yellow]">{user.elo}</span>
